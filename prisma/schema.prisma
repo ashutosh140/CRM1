@@ -1,0 +1,316 @@
+// AI CRM — Prisma schema
+// Docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ───────────────────────── Enums ─────────────────────────
+
+enum Role {
+  ADMIN
+  MANAGER
+  SALES
+  EMPLOYEE
+}
+
+enum LeadSource {
+  WEBSITE
+  WHATSAPP
+  EMAIL
+  FACEBOOK
+  INSTAGRAM
+  PHONE
+  REFERRAL
+  MANUAL
+}
+
+enum LeadStatus {
+  NEW
+  CONTACTED
+  QUALIFIED
+  PROPOSAL
+  NEGOTIATION
+  WON
+  LOST
+}
+
+enum TaskStatus {
+  TODO
+  IN_PROGRESS
+  DONE
+  CANCELLED
+}
+
+enum TaskPriority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+enum QuotationStatus {
+  DRAFT
+  SENT
+  ACCEPTED
+  REJECTED
+  EXPIRED
+}
+
+enum InvoiceStatus {
+  DRAFT
+  SENT
+  PARTIAL
+  PAID
+  OVERDUE
+  CANCELLED
+}
+
+enum Channel {
+  WHATSAPP
+  EMAIL
+  SMS
+  CALL
+  NOTE
+}
+
+enum CommDirection {
+  INBOUND
+  OUTBOUND
+}
+
+enum InsightType {
+  LEAD_SCORE
+  CONVERSATION
+  FOLLOWUP
+  HEALTH_SCORE
+  FORECAST
+  EMPLOYEE_SCORE
+  RECOMMENDATION
+}
+
+// ───────────────────────── Models ─────────────────────────
+
+model User {
+  id           String   @id @default(cuid())
+  name         String
+  email        String   @unique
+  passwordHash String
+  role         Role     @default(SALES)
+  avatarUrl    String?
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  ownedLeads     Lead[]         @relation("LeadOwner")
+  ownedCustomers Customer[]     @relation("CustomerOwner")
+  assignedTasks  Task[]         @relation("TaskAssignee")
+  createdTasks   Task[]         @relation("TaskCreator")
+  quotations     Quotation[]
+  activities     Activity[]
+  performance    Performance[]
+}
+
+model PipelineStage {
+  id          String  @id @default(cuid())
+  name        String
+  order       Int
+  probability Int     @default(0) // 0-100 default win probability at this stage
+  color       String  @default("#6366f1")
+  leads       Lead[]
+
+  @@index([order])
+}
+
+model Lead {
+  id                 String     @id @default(cuid())
+  name               String
+  company            String?
+  email              String?
+  phone              String?
+  source             LeadSource @default(MANUAL)
+  status             LeadStatus @default(NEW)
+  productRequirement String?
+  estimatedValue     Float      @default(0)
+  // AI-derived fields
+  score              Int        @default(0)   // 0-100 lead quality score
+  intent             Int        @default(0)   // 0-100 buying intent
+  urgency            Int        @default(0)   // 0-100
+  closingProbability Int        @default(0)   // 0-100
+  notes              String?
+
+  stageId    String?
+  stage      PipelineStage? @relation(fields: [stageId], references: [id])
+  ownerId    String?
+  owner      User?          @relation("LeadOwner", fields: [ownerId], references: [id])
+  customerId String?
+  customer   Customer?      @relation(fields: [customerId], references: [id])
+
+  activities Activity[]
+  tasks      Task[]
+  insights   AiInsight[]
+
+  lastContactedAt DateTime?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@index([status])
+  @@index([ownerId])
+  @@index([stageId])
+}
+
+model Customer {
+  id          String   @id @default(cuid())
+  name        String
+  company     String?
+  email       String?
+  phone       String?
+  address     String?
+  // AI-derived
+  healthScore Int      @default(50) // 0-100 engagement/health
+  lifetimeValue Float  @default(0)
+  tags        String[] @default([])
+
+  ownerId String?
+  owner   User?   @relation("CustomerOwner", fields: [ownerId], references: [id])
+
+  leads      Lead[]
+  quotations Quotation[]
+  invoices   Invoice[]
+  activities Activity[]
+  insights   AiInsight[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([ownerId])
+}
+
+model Task {
+  id          String       @id @default(cuid())
+  title       String
+  description String?
+  status      TaskStatus   @default(TODO)
+  priority    TaskPriority @default(MEDIUM)
+  dueDate     DateTime?
+
+  assigneeId String?
+  assignee   User?   @relation("TaskAssignee", fields: [assigneeId], references: [id])
+  creatorId  String?
+  creator    User?   @relation("TaskCreator", fields: [creatorId], references: [id])
+  leadId     String?
+  lead       Lead?   @relation(fields: [leadId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([assigneeId])
+  @@index([status])
+}
+
+model Quotation {
+  id        String          @id @default(cuid())
+  number    String          @unique
+  status    QuotationStatus @default(DRAFT)
+  items     Json            // [{description, qty, unitPrice}]
+  subtotal  Float           @default(0)
+  taxRate   Float           @default(18)
+  taxAmount Float           @default(0)
+  total     Float           @default(0)
+  notes     String?
+  validUntil DateTime?
+
+  customerId String
+  customer   Customer @relation(fields: [customerId], references: [id])
+  createdById String?
+  createdBy   User?   @relation(fields: [createdById], references: [id])
+
+  invoice   Invoice?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Invoice {
+  id          String        @id @default(cuid())
+  number      String        @unique
+  status      InvoiceStatus @default(DRAFT)
+  items       Json
+  subtotal    Float         @default(0)
+  taxAmount   Float         @default(0)
+  total       Float         @default(0)
+  paidAmount  Float         @default(0)
+  dueDate     DateTime?
+
+  customerId  String
+  customer    Customer   @relation(fields: [customerId], references: [id])
+  quotationId String?    @unique
+  quotation   Quotation? @relation(fields: [quotationId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Activity {
+  id        String        @id @default(cuid())
+  channel   Channel
+  direction CommDirection @default(OUTBOUND)
+  subject   String?
+  content   String
+  // AI analysis of this interaction
+  sentiment String?       // positive | neutral | negative
+  intentScore Int?        // 0-100
+
+  leadId     String?
+  lead       Lead?     @relation(fields: [leadId], references: [id])
+  customerId String?
+  customer   Customer? @relation(fields: [customerId], references: [id])
+  userId     String?
+  user       User?     @relation(fields: [userId], references: [id])
+
+  createdAt DateTime @default(now())
+
+  @@index([leadId])
+  @@index([customerId])
+}
+
+model AiInsight {
+  id         String      @id @default(cuid())
+  type       InsightType
+  title      String
+  body       String
+  score      Int?        // optional numeric score tied to the insight
+  meta       Json?       // free-form structured payload
+  dismissed  Boolean     @default(false)
+
+  leadId     String?
+  lead       Lead?     @relation(fields: [leadId], references: [id])
+  customerId String?
+  customer   Customer? @relation(fields: [customerId], references: [id])
+
+  createdAt DateTime @default(now())
+
+  @@index([type])
+}
+
+model Performance {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  period    String   // e.g. "2026-06"
+  // AI employee score components (0-100)
+  productivity Int   @default(0)
+  salesScore   Int   @default(0)
+  responseTime Int   @default(0)
+  satisfaction Int   @default(0)
+  revenue      Float @default(0)
+  overall      Int   @default(0)
+
+  createdAt DateTime @default(now())
+
+  @@unique([userId, period])
+}
