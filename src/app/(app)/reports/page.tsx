@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { getMonthlyRevenue } from "@/lib/queries";
 import { Card, PageHeader, StatCard, ScoreBar, Badge } from "@/components/ui";
 import { FunnelChart } from "@/components/FunnelChart";
+import { RecoveryButton } from "@/components/RecoveryButton";
 import { formatCurrency, initials } from "@/lib/utils";
 
 const STATUS_ORDER = ["NEW", "CONTACTED", "QUALIFIED", "PROPOSAL", "NEGOTIATION", "WON", "LOST"];
@@ -108,6 +109,7 @@ export default async function ReportsPage() {
                 </div>
                 <div className="mt-2"><ScoreBar value={c.healthScore} /></div>
                 <p className="mt-2 text-xs text-slate-500">AI: send a win-back offer + schedule a personal call.</p>
+                <RecoveryButton customerId={c.id} />
               </div>
             ))}
           </div>

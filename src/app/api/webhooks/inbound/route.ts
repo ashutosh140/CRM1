@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { extractLead, analyzeConversation, scoreLead } from "@/lib/ai";
+import { runNewLeadWorkflow } from "@/lib/workflows";
 import type { LeadSource } from "@prisma/client";
 
 /**
@@ -72,7 +73,9 @@ export async function POST(req: Request) {
       data: { score: s.score, closingProbability: s.closingProbability },
     });
 
-    return NextResponse.json({ ok: true, leadId: lead.id, extracted, analysis });
+    const steps = await runNewLeadWorkflow(lead.id);
+
+    return NextResponse.json({ ok: true, leadId: lead.id, extracted, analysis, workflow: steps });
   } catch (err) {
     console.error("[webhook] error:", err);
     return NextResponse.json({ error: "internal error" }, { status: 500 });

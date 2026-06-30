@@ -1,7 +1,8 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft, Mail, Phone, Building2, Heart } from "lucide-react";
+import { ArrowLeft, Mail, Phone, Building2, Heart, Brain } from "lucide-react";
 import { prisma } from "@/lib/prisma";
+import { digitalTwin } from "@/lib/ai";
 import { Card, Badge, ScoreBar, PageHeader } from "@/components/ui";
 import { formatCurrency, formatDate } from "@/lib/utils";
 
@@ -23,6 +24,14 @@ export default async function CustomerDetailPage({
   if (!customer) notFound();
 
   const risk = customer.healthScore < 40;
+
+  const { data: twin } = await digitalTwin({
+    name: customer.name,
+    company: customer.company,
+    healthScore: customer.healthScore,
+    lifetimeValue: customer.lifetimeValue,
+    recentActivity: customer.activities.map((a) => a.content).slice(0, 5),
+  });
 
   return (
     <div>
@@ -95,6 +104,23 @@ export default async function CustomerDetailPage({
           </Card>
 
           <Card>
+            <div className="mb-3 flex items-center gap-2">
+              <Brain size={16} className="text-brand-600" />
+              <h2 className="font-semibold text-slate-900">Digital Twin — Call Prep</h2>
+            </div>
+            <p className="mb-3 text-sm text-slate-600">{twin.summary}</p>
+            <div className="space-y-2 text-sm">
+              <TwinRow label="Best time to call" value={twin.bestTimeToCall} />
+              <TwinRow label="Best offer" value={twin.bestOffer} />
+              <TwinRow label="Recommended tone" value={twin.recommendedTone} />
+              <TwinRow label="Closing probability" value={`${twin.closingProbability}%`} />
+              {twin.topicsToAvoid.length > 0 && (
+                <TwinRow label="Topics to avoid" value={twin.topicsToAvoid.join(", ")} />
+              )}
+            </div>
+          </Card>
+
+          <Card>
             <h2 className="mb-3 font-semibold text-slate-900">Recent Activity</h2>
             {customer.activities.length === 0 ? <Empty /> : (
               <ul className="space-y-2 text-sm">
@@ -126,4 +152,12 @@ function Info({ icon, label, value }: { icon: React.ReactNode; label: string; va
 }
 function Empty() {
   return <p className="py-4 text-center text-sm text-slate-400">Nothing yet.</p>;
+}
+function TwinRow({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="flex justify-between gap-3 border-b border-slate-50 pb-1.5 last:border-0">
+      <span className="shrink-0 text-slate-400">{label}</span>
+      <span className="text-right text-slate-700">{value}</span>
+    </div>
+  );
 }

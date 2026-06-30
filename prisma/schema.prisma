@@ -297,6 +297,17 @@ model AiInsight {
   @@index([type])
 }
 
+model Meeting {
+  id          String   @id @default(cuid())
+  title       String
+  transcript  String
+  summary     String?
+  actionItems Json?    // string[]
+  nextMeeting String?
+  customerId  String?
+  createdAt   DateTime @default(now())
+}
+
 model Performance {
   id        String   @id @default(cuid())
   userId    String

@@ -5,7 +5,12 @@ import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/auth";
 import { genNumber } from "@/lib/utils";
+import { generateProposal, dynamicPricing } from "@/lib/ai";
+import { sendEmail, emailTemplate } from "@/lib/email";
+import { formatCurrency } from "@/lib/utils";
 import type { QuotationStatus } from "@prisma/client";
+
+interface QItem { description: string; qty: number; unitPrice: number; }
 
 interface Item {
   description: string;
@@ -81,4 +86,73 @@ export async function convertToInvoiceAction(quotationId: string) {
   revalidatePath("/invoices");
   revalidatePath("/quotations");
   redirect("/invoices");
+}
+
+/** AI Proposal Generator for a quotation. */
+export async function generateProposalAction(quotationId: string) {
+  const q = await prisma.quotation.findUnique({
+    where: { id: quotationId },
+    include: { customer: true },
+  });
+  if (!q) return { error: "Quotation not found" };
+  const { data, mocked } = await generateProposal({
+    customerName: q.customer.name,
+    company: q.customer.company,
+    items: q.items as unknown as QItem[],
+    total: q.total,
+    notes: q.notes,
+  });
+  return { ok: true, mocked, proposal: data };
+}
+
+/** Dynamic Pricing Recommendation for a quotation. */
+export async function pricingAdviceAction(quotationId: string) {
+  const q = await prisma.quotation.findUnique({
+    where: { id: quotationId },
+    include: { customer: { select: { healthScore: true } } },
+  });
+  if (!q) return { error: "Quotation not found" };
+  const { data, mocked } = await dynamicPricing({
+    listTotal: q.total,
+    customerHealth: q.customer.healthScore,
+  });
+  return { ok: true, mocked, advice: data };
+}
+
+/** Email the quotation to the customer (via Brevo). */
+export async function emailQuotationAction(quotationId: string) {
+  const q = await prisma.quotation.findUnique({
+    where: { id: quotationId },
+    include: { customer: true },
+  });
+  if (!q) return { error: "Quotation not found" };
+  if (!q.customer.email) return { error: "Customer ka email nahi hai." };
+
+  const items = (q.items as unknown as QItem[])
+    .map((i) => `• ${i.description} — ${i.qty} × ${formatCurrency(i.unitPrice)}`)
+    .join("\n");
+  const html = emailTemplate({
+    title: `Your Quotation ${q.number}`,
+    body: `Dear ${q.customer.name},\n\nPlease find your quotation below:\n\n${items}\n\nTotal: ${formatCurrency(q.total)} (incl. tax)\n\n${q.notes ?? ""}`,
+    cta: { label: "View Quotation", url: `${process.env.APP_URL ?? "http://localhost:3000"}/print/quotation/${q.id}` },
+  });
+
+  const res = await sendEmail({
+    to: q.customer.email, toName: q.customer.name,
+    subject: `Quotation ${q.number} from AI CRM`, html,
+  });
+
+  if (res.ok && q.status === "DRAFT") {
+    await prisma.quotation.update({ where: { id: q.id }, data: { status: "SENT" } });
+  }
+  // log communication
+  await prisma.activity.create({
+    data: {
+      channel: "EMAIL", direction: "OUTBOUND", customerId: q.customerId,
+      subject: `Quotation ${q.number}`,
+      content: res.mocked ? `[MOCK email] Quotation ${q.number} sent to ${q.customer.email}` : `Quotation ${q.number} emailed to ${q.customer.email}`,
+    },
+  });
+  revalidatePath("/quotations");
+  return { ok: res.ok, mocked: res.mocked, error: res.error };
 }

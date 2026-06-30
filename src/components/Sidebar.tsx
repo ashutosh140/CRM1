@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   LayoutDashboard, Users, UserCircle, KanbanSquare, CheckSquare,
-  FileText, Receipt, MessageSquare, BarChart3, Sparkles, Settings,
+  FileText, Receipt, MessageSquare, BarChart3, Sparkles, Settings, Video,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { Role } from "@prisma/client";
@@ -18,6 +18,7 @@ const NAV = [
   { href: "/quotations", label: "Quotations", icon: FileText, min: "SALES" },
   { href: "/invoices", label: "Invoices", icon: Receipt, min: "SALES" },
   { href: "/communication", label: "Communication", icon: MessageSquare, min: "SALES" },
+  { href: "/meetings", label: "Meetings", icon: Video, min: "SALES" },
   { href: "/reports", label: "Reports & AI", icon: BarChart3, min: "MANAGER" },
   { href: "/settings", label: "Settings", icon: Settings, min: "ADMIN" },
 ] as const;

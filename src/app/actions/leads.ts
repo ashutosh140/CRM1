@@ -7,6 +7,7 @@ import { getCurrentUser } from "@/lib/auth";
 import {
   scoreLead, extractLead, analyzeConversation, suggestFollowup,
 } from "@/lib/ai";
+import { runNewLeadWorkflow } from "@/lib/workflows";
 import type { LeadSource, LeadStatus, Channel } from "@prisma/client";
 
 /** AI Lead Assignment — pick the SALES user with the fewest open leads. */
@@ -55,6 +56,9 @@ export async function createLeadAction(_prev: unknown, formData: FormData) {
     where: { id: lead.id },
     data: { score: s.score, intent: s.intent, urgency: s.urgency, closingProbability: s.closingProbability },
   });
+
+  // Autonomous workflow: welcome email + follow-up task + manager alert
+  await runNewLeadWorkflow(lead.id);
 
   revalidatePath("/leads");
   redirect(`/leads/${lead.id}`);
@@ -108,6 +112,9 @@ export async function captureLeadAction(_prev: unknown, formData: FormData) {
       closingProbability: s.closingProbability,
     },
   });
+
+  // Autonomous workflow
+  await runNewLeadWorkflow(lead.id);
 
   revalidatePath("/leads");
   redirect(`/leads/${lead.id}?captured=${mocked ? "mock" : "ai"}`);

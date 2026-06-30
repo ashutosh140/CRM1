@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/auth";
 import { Sidebar } from "@/components/Sidebar";
 import { Topbar } from "@/components/Topbar";
+import { VoiceAssistant } from "@/components/VoiceAssistant";
 
 export default async function AppLayout({
   children,
@@ -18,6 +19,7 @@ export default async function AppLayout({
         <Topbar name={user.name} role={user.role} />
         <main className="flex-1 overflow-y-auto p-6">{children}</main>
       </div>
+      <VoiceAssistant />
     </div>
   );
 }
