@@ -8,3 +8,5 @@ build
 .DS_Store
 next-env.d.ts
 /prisma/dev.db
+.vercel
+.vercel_token.txt
