@@ -14,9 +14,14 @@ interface Msg {
 }
 type Target = { type: "user" | "group"; id: string; name: string; sub: string };
 
-export function TeamChat({ meId, meRole }: { meId: string; meRole: Role }) {
-  const [contacts, setContacts] = useState<Contact[]>([]);
-  const [groups, setGroups] = useState<Group[]>([]);
+export function TeamChat({
+  meId, initialContacts = [], initialGroups = [],
+}: {
+  meId: string; meRole?: Role;
+  initialContacts?: Contact[]; initialGroups?: Group[];
+}) {
+  const [contacts, setContacts] = useState<Contact[]>(initialContacts);
+  const [groups, setGroups] = useState<Group[]>(initialGroups);
   const [query, setQuery] = useState("");
   const [target, setTarget] = useState<Target | null>(null);
   const [messages, setMessages] = useState<Msg[]>([]);

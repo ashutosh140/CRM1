@@ -5,15 +5,39 @@
 :root {
   --bg: #f8fafc;
 }
+.dark {
+  --bg: #0b1220;
+}
 
 body {
   background: var(--bg);
   color: #0f172a;
 }
+.dark body {
+  color: #e2e8f0;
+}
+
+/* ── Dark mode: remap the utility classes used across the app ── */
+.dark .bg-white { background-color: #1e293b !important; }
+.dark .bg-slate-50 { background-color: #0f172a !important; }
+.dark .bg-slate-100 { background-color: #334155 !important; }
+.dark .hover\:bg-slate-50:hover { background-color: #172033 !important; }
+.dark .hover\:bg-slate-100:hover { background-color: #334155 !important; }
+.dark .text-slate-900 { color: #f1f5f9 !important; }
+.dark .text-slate-800 { color: #e2e8f0 !important; }
+.dark .text-slate-700 { color: #cbd5e1 !important; }
+.dark .text-slate-600 { color: #cbd5e1 !important; }
+.dark .text-slate-500 { color: #94a3b8 !important; }
+.dark .text-slate-400 { color: #64748b !important; }
+.dark .border-slate-200 { border-color: #334155 !important; }
+.dark .border-slate-100 { border-color: #243244 !important; }
+.dark .border-slate-50 { border-color: #1e293b !important; }
+.dark .border-slate-300 { border-color: #475569 !important; }
+.dark .divide-slate-100 > * + * { border-color: #243244 !important; }
 
 @layer components {
   .card {
-    @apply rounded-xl border border-slate-200 bg-white shadow-sm;
+    @apply rounded-xl border border-slate-200 bg-white shadow-sm dark:border-slate-700 dark:bg-slate-800;
   }
   .btn {
     @apply inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition disabled:opacity-50;
@@ -22,10 +46,10 @@ body {
     @apply btn bg-brand-600 text-white hover:bg-brand-700;
   }
   .btn-ghost {
-    @apply btn border border-slate-200 bg-white text-slate-700 hover:bg-slate-50;
+    @apply btn border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200;
   }
   .input {
-    @apply w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-100;
+    @apply w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-100 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-100;
   }
   .label {
     @apply mb-1 block text-sm font-medium text-slate-700;

@@ -1,6 +1,8 @@
+import Link from "next/link";
 import { logoutAction } from "@/app/actions/auth";
 import { initials } from "@/lib/utils";
-import { LogOut } from "lucide-react";
+import { LogOut, Settings2 } from "lucide-react";
+import { ThemeToggle } from "@/components/ThemeToggle";
 import type { Role } from "@prisma/client";
 
 export function Topbar({ name, role }: { name: string; role: Role }) {
@@ -10,6 +12,10 @@ export function Topbar({ name, role }: { name: string; role: Role }) {
         Welcome back, <span className="font-medium text-slate-800">{name.split(" ")[0]}</span>
       </div>
       <div className="flex items-center gap-3">
+        <ThemeToggle />
+        <Link href="/account" className="btn-ghost px-2.5" title="My Account">
+          <Settings2 size={16} />
+        </Link>
         <div className="flex items-center gap-2">
           <div className="flex h-9 w-9 items-center justify-center rounded-full bg-brand-100 text-sm font-semibold text-brand-700">
             {initials(name)}
