@@ -7,7 +7,7 @@ import type { TaskStatus, TaskPriority } from "@prisma/client";
 
 export async function createTaskAction(_prev: unknown, formData: FormData) {
   const title = String(formData.get("title") || "").trim();
-  if (!title) return { error: "Title chahiye." };
+  if (!title) return { error: "Title is required." };
   const user = await getCurrentUser();
 
   await prisma.task.create({

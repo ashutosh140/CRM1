@@ -58,7 +58,7 @@ export default async function LeadsPage({
       </div>
 
       {leads.length === 0 ? (
-        <EmptyState message="Koi lead nahi mili. 'AI Capture' se message paste karo ya 'New Lead' banao." />
+        <EmptyState message="No leads found. Use 'AI Capture' to paste a message, or create a 'New Lead'." />
       ) : (
         <div className="card overflow-hidden">
           <div className="overflow-x-auto">

@@ -26,7 +26,7 @@ function computeTotals(items: Item[], taxRate: number) {
 
 export async function createQuotationAction(_prev: unknown, formData: FormData) {
   const customerId = String(formData.get("customerId") || "");
-  if (!customerId) return { error: "Customer choose karo." };
+  if (!customerId) return { error: "Please choose a customer." };
 
   const descriptions = formData.getAll("itemDescription").map(String);
   const qtys = formData.getAll("itemQty").map((v) => Number(v) || 0);
@@ -35,7 +35,7 @@ export async function createQuotationAction(_prev: unknown, formData: FormData) 
     .map((d, i) => ({ description: d, qty: qtys[i], unitPrice: prices[i] }))
     .filter((it) => it.description.trim() && it.qty > 0);
 
-  if (items.length === 0) return { error: "Kam se kam ek item add karo." };
+  if (items.length === 0) return { error: "Add at least one item." };
 
   const taxRate = Number(formData.get("taxRate") || 18);
   const { subtotal, taxAmount, total } = computeTotals(items, taxRate);
@@ -126,7 +126,7 @@ export async function emailQuotationAction(quotationId: string) {
     include: { customer: true },
   });
   if (!q) return { error: "Quotation not found" };
-  if (!q.customer.email) return { error: "Customer ka email nahi hai." };
+  if (!q.customer.email) return { error: "Customer has no email address." };
 
   const items = (q.items as unknown as QItem[])
     .map((i) => `• ${i.description} — ${i.qty} × ${formatCurrency(i.unitPrice)}`)

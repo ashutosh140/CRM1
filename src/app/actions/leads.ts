@@ -23,7 +23,7 @@ async function pickBestSalesUser(): Promise<string | null> {
 
 export async function createLeadAction(_prev: unknown, formData: FormData) {
   const name = String(formData.get("name") || "").trim();
-  if (!name) return { error: "Name zaroori hai." };
+  if (!name) return { error: "Name is required." };
 
   const source = (String(formData.get("source") || "MANUAL")) as LeadSource;
   const estimatedValue = Number(formData.get("estimatedValue") || 0);
@@ -68,7 +68,7 @@ export async function createLeadAction(_prev: unknown, formData: FormData) {
 export async function captureLeadAction(_prev: unknown, formData: FormData) {
   const message = String(formData.get("message") || "").trim();
   const source = (String(formData.get("source") || "WHATSAPP")) as LeadSource;
-  if (!message) return { error: "Message paste karo." };
+  if (!message) return { error: "Please paste a message." };
 
   const { data: extracted, mocked } = await extractLead(message, source);
   const ownerId = await pickBestSalesUser();
@@ -136,7 +136,7 @@ export async function addActivityAction(_prev: unknown, formData: FormData) {
   const leadId = String(formData.get("leadId"));
   const content = String(formData.get("content") || "").trim();
   const channel = (String(formData.get("channel") || "NOTE")) as Channel;
-  if (!content) return { error: "Content chahiye." };
+  if (!content) return { error: "Content is required." };
 
   const user = await getCurrentUser();
   const { data: analysis } = await analyzeConversation(content);

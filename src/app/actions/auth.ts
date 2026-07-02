@@ -13,17 +13,17 @@ export async function loginAction(_prev: unknown, formData: FormData) {
   const password = String(formData.get("password") || "");
 
   if (!email || !password) {
-    return { error: "Email aur password dono chahiye." };
+    return { error: "Email and password are both required." };
   }
 
   const user = await prisma.user.findUnique({ where: { email } });
   if (!user || !user.isActive) {
-    return { error: "Account nahi mila ya inactive hai." };
+    return { error: "Account not found or inactive." };
   }
 
   const ok = await verifyPassword(password, user.passwordHash);
   if (!ok) {
-    return { error: "Galat password." };
+    return { error: "Incorrect password." };
   }
 
   await createSession({

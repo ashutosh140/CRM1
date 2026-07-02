@@ -8,7 +8,7 @@ import { summarizeMeeting } from "@/lib/ai";
 export async function createMeetingAction(_prev: unknown, formData: FormData) {
   const title = String(formData.get("title") || "Untitled meeting").trim();
   const transcript = String(formData.get("transcript") || "").trim();
-  if (!transcript) return { error: "Transcript ya notes paste karo." };
+  if (!transcript) return { error: "Please paste a transcript or notes." };
 
   const { data: s, mocked } = await summarizeMeeting(transcript);
   const user = await getCurrentUser();

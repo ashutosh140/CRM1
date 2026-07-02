@@ -114,6 +114,27 @@ model User {
   quotations     Quotation[]
   activities     Activity[]
   performance    Performance[]
+  sentMessages     Message[] @relation("SentMessages")
+  receivedMessages Message[] @relation("ReceivedMessages")
+}
+
+// Internal team chat (WhatsApp-style 1-on-1 messaging between users)
+model Message {
+  id          String    @id @default(cuid())
+  body        String?
+  fileName    String?
+  fileType    String?
+  fileData    String?   // base64 data URL for small shared files
+  readAt      DateTime?
+  createdAt   DateTime  @default(now())
+
+  senderId    String
+  sender      User      @relation("SentMessages", fields: [senderId], references: [id], onDelete: Cascade)
+  recipientId String
+  recipient   User      @relation("ReceivedMessages", fields: [recipientId], references: [id], onDelete: Cascade)
+
+  @@index([senderId, recipientId, createdAt])
+  @@index([recipientId, readAt])
 }
 
 model PipelineStage {

@@ -28,7 +28,7 @@ export default async function DashboardPage() {
   return (
     <div>
       <PageHeader
-        title={`Namaste, ${user?.name.split(" ")[0]} 👋`}
+        title={`Welcome, ${user?.name.split(" ")[0]} 👋`}
         subtitle="Real-time business overview, predictions, and AI recommendations."
       />
 

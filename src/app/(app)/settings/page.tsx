@@ -12,7 +12,7 @@ export default async function SettingsPage() {
     return (
       <div>
         <PageHeader title="Settings" />
-        <Card><p className="text-sm text-slate-500">Sirf Admin is page ko access kar sakta hai.</p></Card>
+        <Card><p className="text-sm text-slate-500">Only an Admin can access this page.</p></Card>
       </div>
     );
   }
