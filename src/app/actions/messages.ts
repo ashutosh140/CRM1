@@ -5,24 +5,15 @@ import { getCurrentUser } from "@/lib/auth";
 
 const MAX_FILE = 5 * 1024 * 1024; // 5 MB
 
-export interface ChatMessage {
-  id: string;
-  senderId: string;
-  body: string | null;
-  fileName: string | null;
-  fileType: string | null;
-  hasFile: boolean;
-  createdAt: string;
-}
-
-/** Send a 1-on-1 message (optionally with a file) to another user. */
+/** Send a message to a user (targetType=user) or a group (targetType=group). */
 export async function sendMessageAction(formData: FormData) {
   const me = await getCurrentUser();
   if (!me) return { error: "Not authenticated" };
 
-  const recipientId = String(formData.get("recipientId") || "");
+  const targetType = String(formData.get("targetType") || "user");
+  const targetId = String(formData.get("targetId") || "");
   const body = String(formData.get("body") || "").trim();
-  if (!recipientId) return { error: "No recipient" };
+  if (!targetId) return { error: "No recipient" };
 
   let fileName: string | null = null;
   let fileType: string | null = null;
@@ -39,62 +30,39 @@ export async function sendMessageAction(formData: FormData) {
 
   if (!body && !fileData) return { error: "Message is empty." };
 
-  await prisma.message.create({
-    data: { senderId: me.id, recipientId, body: body || null, fileName, fileType, fileData },
-  });
+  if (targetType === "group") {
+    const member = await prisma.groupMember.findUnique({
+      where: { groupId_userId: { groupId: targetId, userId: me.id } },
+    });
+    if (!member && me.role !== "ADMIN") return { error: "Not a group member." };
+    await prisma.message.create({
+      data: { senderId: me.id, groupId: targetId, body: body || null, fileName, fileType, fileData },
+    });
+  } else {
+    await prisma.message.create({
+      data: { senderId: me.id, recipientId: targetId, body: body || null, fileName, fileType, fileData },
+    });
+  }
   return { ok: true };
 }
 
-/** Fetch the conversation between me and another user (light — no file blobs). */
-export async function getConversationAction(otherUserId: string): Promise<{
-  meId: string;
-  messages: ChatMessage[];
-}> {
+/** Create a group with the given members (creator is always added). */
+export async function createGroupAction(formData: FormData) {
   const me = await getCurrentUser();
-  if (!me) return { meId: "", messages: [] };
+  if (!me) return { error: "Not authenticated" };
 
-  const rows = await prisma.message.findMany({
-    where: {
-      OR: [
-        { senderId: me.id, recipientId: otherUserId },
-        { senderId: otherUserId, recipientId: me.id },
-      ],
-    },
-    orderBy: { createdAt: "asc" },
-    take: 300,
-    select: {
-      id: true, senderId: true, body: true, fileName: true, fileType: true,
-      createdAt: true, fileData: true,
+  const name = String(formData.get("name") || "").trim();
+  const memberIds = formData.getAll("memberIds").map(String).filter(Boolean);
+  if (!name) return { error: "Group name is required." };
+  if (memberIds.length === 0) return { error: "Select at least one member." };
+
+  const ids = Array.from(new Set([me.id, ...memberIds]));
+  const group = await prisma.group.create({
+    data: {
+      name,
+      createdById: me.id,
+      members: { create: ids.map((userId) => ({ userId })) },
     },
   });
-
-  // mark their messages to me as read
-  await prisma.message.updateMany({
-    where: { senderId: otherUserId, recipientId: me.id, readAt: null },
-    data: { readAt: new Date() },
-  });
-
-  return {
-    meId: me.id,
-    messages: rows.map((m) => ({
-      id: m.id, senderId: m.senderId, body: m.body,
-      fileName: m.fileName, fileType: m.fileType,
-      hasFile: Boolean(m.fileData),
-      createdAt: m.createdAt.toISOString(),
-    })),
-  };
-}
-
-/** Unread counts per sender, for badges on the contact list. */
-export async function getUnreadCountsAction(): Promise<Record<string, number>> {
-  const me = await getCurrentUser();
-  if (!me) return {};
-  const grouped = await prisma.message.groupBy({
-    by: ["senderId"],
-    where: { recipientId: me.id, readAt: null },
-    _count: { _all: true },
-  });
-  const out: Record<string, number> = {};
-  for (const g of grouped) out[g.senderId] = g._count._all;
-  return out;
+  return { ok: true, groupId: group.id };
 }

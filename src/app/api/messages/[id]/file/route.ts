@@ -13,12 +13,21 @@ export async function GET(
   const { id } = await params;
   const msg = await prisma.message.findUnique({
     where: { id },
-    select: { senderId: true, recipientId: true, fileData: true, fileName: true, fileType: true },
+    select: { senderId: true, recipientId: true, groupId: true, fileData: true, fileName: true, fileType: true },
   });
   if (!msg || !msg.fileData) return new NextResponse("Not found", { status: 404 });
-  if (msg.senderId !== me.id && msg.recipientId !== me.id) {
-    return new NextResponse("Forbidden", { status: 403 });
+
+  let allowed = msg.senderId === me.id || msg.recipientId === me.id;
+  if (!allowed && msg.groupId) {
+    if (me.role === "ADMIN") allowed = true;
+    else {
+      const member = await prisma.groupMember.findUnique({
+        where: { groupId_userId: { groupId: msg.groupId, userId: me.id } },
+      });
+      allowed = Boolean(member);
+    }
   }
+  if (!allowed) return new NextResponse("Forbidden", { status: 403 });
 
   // fileData is a data URL: data:<type>;base64,<payload>
   const base64 = msg.fileData.split(",")[1] ?? "";

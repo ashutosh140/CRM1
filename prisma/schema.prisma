@@ -114,11 +114,13 @@ model User {
   quotations     Quotation[]
   activities     Activity[]
   performance    Performance[]
-  sentMessages     Message[] @relation("SentMessages")
-  receivedMessages Message[] @relation("ReceivedMessages")
+  sentMessages     Message[]     @relation("SentMessages")
+  receivedMessages Message[]     @relation("ReceivedMessages")
+  createdGroups    Group[]       @relation("GroupCreator")
+  groupMemberships GroupMember[]
 }
 
-// Internal team chat (WhatsApp-style 1-on-1 messaging between users)
+// Internal team chat: 1-on-1 (recipientId set) OR group (groupId set)
 model Message {
   id          String    @id @default(cuid())
   body        String?
@@ -130,11 +132,37 @@ model Message {
 
   senderId    String
   sender      User      @relation("SentMessages", fields: [senderId], references: [id], onDelete: Cascade)
-  recipientId String
-  recipient   User      @relation("ReceivedMessages", fields: [recipientId], references: [id], onDelete: Cascade)
+
+  recipientId String?
+  recipient   User?     @relation("ReceivedMessages", fields: [recipientId], references: [id], onDelete: Cascade)
+
+  groupId     String?
+  group       Group?    @relation(fields: [groupId], references: [id], onDelete: Cascade)
 
   @@index([senderId, recipientId, createdAt])
+  @@index([groupId, createdAt])
   @@index([recipientId, readAt])
+}
+
+model Group {
+  id          String        @id @default(cuid())
+  name        String
+  createdById String
+  createdBy   User          @relation("GroupCreator", fields: [createdById], references: [id])
+  members     GroupMember[]
+  messages    Message[]
+  createdAt   DateTime      @default(now())
+}
+
+model GroupMember {
+  id       String   @id @default(cuid())
+  groupId  String
+  group    Group    @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  userId   String
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  joinedAt DateTime @default(now())
+
+  @@unique([groupId, userId])
 }
 
 model PipelineStage {
