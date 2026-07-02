@@ -1,3 +1,4 @@
+import { cache } from "react";
 import { cookies } from "next/headers";
 import { SignJWT, jwtVerify } from "jose";
 import bcrypt from "bcryptjs";
@@ -58,12 +59,14 @@ export async function getSession(): Promise<SessionPayload | null> {
   }
 }
 
-/** Full DB user for the current session, or null. */
-export async function getCurrentUser() {
+/** Full DB user for the current session, or null.
+ *  Wrapped in React cache() so repeated calls within one request (layout + page)
+ *  hit the DB only once. */
+export const getCurrentUser = cache(async () => {
   const session = await getSession();
   if (!session) return null;
   return prisma.user.findUnique({ where: { id: session.userId } });
-}
+});
 
 export const ROLE_RANK: Record<Role, number> = {
   ADMIN: 4,

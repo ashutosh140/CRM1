@@ -1,12 +1,12 @@
 import Link from "next/link";
 import {
-  Users, Trophy, Wallet, KanbanSquare, Sparkles, Flame, ArrowRight,
+  Users, Trophy, Wallet, KanbanSquare, Flame, ArrowRight,
 } from "lucide-react";
 import { getCurrentUser } from "@/lib/auth";
 import { getDashboardStats, getMonthlyRevenue } from "@/lib/queries";
-import { businessInsights, aiEnabled } from "@/lib/ai";
 import { StatCard, Card, PageHeader, ScoreBar, Badge } from "@/components/ui";
 import { RevenueChart } from "@/components/RevenueChart";
+import { AiAssistant } from "@/components/AiAssistant";
 import { formatCurrency } from "@/lib/utils";
 
 export default async function DashboardPage() {
@@ -16,14 +16,14 @@ export default async function DashboardPage() {
     getMonthlyRevenue(),
   ]);
 
-  const { data: insightData, mocked } = await businessInsights({
+  const metrics = {
     totalLeads: stats.totalLeads,
     openLeads: stats.openLeads,
     winRate: stats.winRate,
     pipelineValue: stats.pipelineValue,
     pendingTasks: stats.pendingTasks,
     revenue: stats.revenue,
-  });
+  };
 
   return (
     <div>
@@ -50,29 +50,8 @@ export default async function DashboardPage() {
           <RevenueChart data={monthly} />
         </Card>
 
-        {/* AI Business Assistant */}
-        <Card>
-          <div className="mb-3 flex items-center gap-2">
-            <Sparkles size={18} className="text-brand-600" />
-            <h2 className="font-semibold text-slate-900">AI Business Assistant</h2>
-          </div>
-          {!aiEnabled && (
-            <p className="mb-3 rounded-lg bg-amber-50 px-3 py-2 text-xs text-amber-700">
-              Mock mode — add <code>OPENAI_API_KEY</code> for live AI insights.
-            </p>
-          )}
-          <ul className="space-y-3">
-            {insightData.insights.map((ins, i) => (
-              <li key={i} className="rounded-lg border border-slate-100 bg-slate-50/50 p-3">
-                <p className="text-sm font-medium text-slate-800">{ins.title}</p>
-                <p className="mt-0.5 text-xs text-slate-500">{ins.body}</p>
-              </li>
-            ))}
-          </ul>
-          {!mocked && (
-            <p className="mt-3 text-[10px] text-slate-400">Generated live by OpenAI.</p>
-          )}
-        </Card>
+        {/* AI Business Assistant — loads client-side so the dashboard is instant */}
+        <AiAssistant metrics={metrics} />
       </div>
 
       {/* Hot leads */}

@@ -35,6 +35,20 @@ body {
 .dark .border-slate-300 { border-color: #475569 !important; }
 .dark .divide-slate-100 > * + * { border-color: #243244 !important; }
 
+/* tinted / translucent surfaces in dark mode (so text stays readable) */
+.dark .bg-slate-50\/50 { background-color: rgba(15, 23, 42, 0.6) !important; }
+.dark .bg-slate-50\/40 { background-color: rgba(15, 23, 42, 0.5) !important; }
+.dark .bg-brand-50 { background-color: rgba(99, 102, 241, 0.15) !important; }
+.dark .bg-brand-50\/50 { background-color: rgba(99, 102, 241, 0.12) !important; }
+.dark .bg-emerald-50 { background-color: rgba(16, 185, 129, 0.12) !important; }
+.dark .bg-emerald-50\/50 { background-color: rgba(16, 185, 129, 0.10) !important; }
+.dark .bg-rose-50 { background-color: rgba(244, 63, 94, 0.12) !important; }
+.dark .bg-rose-50\/40 { background-color: rgba(244, 63, 94, 0.10) !important; }
+.dark .bg-amber-50 { background-color: rgba(245, 158, 11, 0.12) !important; }
+/* icon tiles keep a soft tint */
+.dark .bg-brand-100 { background-color: rgba(99, 102, 241, 0.22) !important; }
+.dark .bg-emerald-100 { background-color: rgba(16, 185, 129, 0.20) !important; }
+
 @layer components {
   .card {
     @apply rounded-xl border border-slate-200 bg-white shadow-sm dark:border-slate-700 dark:bg-slate-800;

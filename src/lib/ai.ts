@@ -13,7 +13,11 @@ const MODEL = process.env.OPENAI_MODEL?.trim() || "gpt-4o-mini";
 
 export const aiEnabled = Boolean(apiKey);
 
-const client = aiEnabled ? new OpenAI({ apiKey }) : null;
+// Tight timeout + no retries so a slow/hanging OpenAI never blocks page render
+// (it falls back to the heuristic instead). Prevents serverless function timeouts.
+const client = aiEnabled
+  ? new OpenAI({ apiKey, timeout: 7000, maxRetries: 0 })
+  : null;
 
 /** Low-level helper: ask the model for JSON, with a typed fallback. */
 async function askJSON<T>(
