@@ -10,3 +10,6 @@ next-env.d.ts
 /prisma/dev.db
 .vercel
 .vercel_token.txt
+
+.vercel
+.env*
