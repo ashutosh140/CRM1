@@ -12,9 +12,19 @@
 body {
   background: var(--bg);
   color: #0f172a;
+  /* refined type rendering — the same Inter OpenType features used by
+     Vercel / GitHub / Linear for a crisp, premium look */
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  font-feature-settings: "cv02", "cv03", "cv04", "cv11", "ss01";
+  letter-spacing: -0.011em;
+  text-rendering: optimizeLegibility;
 }
 .dark body {
   color: #e2e8f0;
+}
+h1, h2, h3, .font-bold, .font-semibold {
+  letter-spacing: -0.02em;
 }
 
 /* ── Dark mode: remap the utility classes used across the app ── */
@@ -22,6 +32,7 @@ body {
 .dark .bg-slate-50 { background-color: #0f172a !important; }
 .dark .bg-slate-100 { background-color: #334155 !important; }
 .dark .hover\:bg-slate-50:hover { background-color: #172033 !important; }
+.dark .hover\:bg-slate-50\/50:hover { background-color: #172033 !important; }
 .dark .hover\:bg-slate-100:hover { background-color: #334155 !important; }
 .dark .text-slate-900 { color: #f1f5f9 !important; }
 .dark .text-slate-800 { color: #e2e8f0 !important; }
