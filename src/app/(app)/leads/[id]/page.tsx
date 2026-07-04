@@ -1,13 +1,14 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import {
-  ArrowLeft, Mail, Phone, Building2, Sparkles, Send, Clock,
+  ArrowLeft, Sparkles, Send, Clock,
 } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { suggestFollowup } from "@/lib/ai";
 import { Card, Badge, ScoreBar, PageHeader } from "@/components/ui";
 import { StatusSelect, ActivityForm, RescoreButton } from "@/components/LeadActions";
-import { formatCurrency, formatDate, relativeDays } from "@/lib/utils";
+import { LeadEditor } from "@/components/LeadEditor";
+import { formatDate, relativeDays } from "@/lib/utils";
 
 export default async function LeadDetailPage({
   params,
@@ -53,28 +54,15 @@ export default async function LeadDetailPage({
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         {/* Left: details + activity */}
         <div className="space-y-6 lg:col-span-2">
-          <Card>
-            <div className="grid grid-cols-2 gap-4 text-sm sm:grid-cols-4">
-              <Info icon={<Building2 size={15} />} label="Company" value={lead.company ?? "—"} />
-              <Info icon={<Mail size={15} />} label="Email" value={lead.email ?? "—"} />
-              <Info icon={<Phone size={15} />} label="Phone" value={lead.phone ?? "—"} />
-              <div>
-                <p className="text-xs text-slate-400">Source</p>
-                <Badge value={lead.source} />
-              </div>
-            </div>
-            {lead.productRequirement && (
-              <div className="mt-4 rounded-lg bg-slate-50 p-3 text-sm text-slate-600">
-                <p className="mb-1 text-xs font-medium text-slate-400">Requirement</p>
-                {lead.productRequirement}
-              </div>
-            )}
-            <div className="mt-4 flex flex-wrap items-center gap-4 text-sm text-slate-500">
-              <span>Value: <b className="text-slate-800">{formatCurrency(lead.estimatedValue)}</b></span>
-              <span>Stage: {lead.stage?.name ?? "—"}</span>
-              <span>Owner: {lead.owner?.name ?? "Unassigned"}</span>
-            </div>
-          </Card>
+          <LeadEditor lead={{
+            id: lead.id, name: lead.name, company: lead.company, email: lead.email, phone: lead.phone,
+            altPhone: lead.altPhone, source: lead.source, status: lead.status, estimatedValue: lead.estimatedValue,
+            website: lead.website, facebook: lead.facebook, instagram: lead.instagram, twitter: lead.twitter,
+            otherLinks: lead.otherLinks, heroProducts: lead.heroProducts, contractMonths: lead.contractMonths,
+            onboardedAt: lead.onboardedAt?.toISOString() ?? null, inquiryReason: lead.inquiryReason,
+            productRequirement: lead.productRequirement,
+            stageName: lead.stage?.name ?? null, ownerName: lead.owner?.name ?? null,
+          }} />
 
           {/* Activity / conversations */}
           <Card>
@@ -146,15 +134,6 @@ export default async function LeadDetailPage({
           </Card>
         </div>
       </div>
-    </div>
-  );
-}
-
-function Info({ icon, label, value }: { icon: React.ReactNode; label: string; value: string }) {
-  return (
-    <div>
-      <p className="flex items-center gap-1 text-xs text-slate-400">{icon} {label}</p>
-      <p className="mt-0.5 truncate text-slate-700">{value}</p>
     </div>
   );
 }

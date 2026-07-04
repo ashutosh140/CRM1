@@ -7,8 +7,33 @@ import { getCurrentUser } from "@/lib/auth";
 import {
   scoreLead, extractLead, analyzeConversation, suggestFollowup,
 } from "@/lib/ai";
-import { runNewLeadWorkflow } from "@/lib/workflows";
+import { runNewLeadWorkflow, sendWelcomeEmail } from "@/lib/workflows";
 import type { LeadSource, LeadStatus, Channel } from "@prisma/client";
+
+const str = (fd: FormData, k: string) => {
+  const v = String(fd.get(k) || "").trim();
+  return v || null;
+};
+
+/** Extended editable lead fields shared by create & update. */
+function extractLeadFields(fd: FormData) {
+  return {
+    company: str(fd, "company"),
+    email: str(fd, "email"),
+    phone: str(fd, "phone"),
+    productRequirement: str(fd, "productRequirement"),
+    altPhone: str(fd, "altPhone"),
+    website: str(fd, "website"),
+    facebook: str(fd, "facebook"),
+    instagram: str(fd, "instagram"),
+    twitter: str(fd, "twitter"),
+    otherLinks: str(fd, "otherLinks"),
+    heroProducts: str(fd, "heroProducts"),
+    inquiryReason: str(fd, "inquiryReason"),
+    onboardedAt: fd.get("onboardedAt") ? new Date(String(fd.get("onboardedAt"))) : null,
+    contractMonths: fd.get("contractMonths") ? Number(fd.get("contractMonths")) : null,
+  };
+}
 
 /** AI Lead Assignment — pick the SALES user with the fewest open leads. */
 async function pickBestSalesUser(): Promise<string | null> {
@@ -35,14 +60,11 @@ export async function createLeadAction(_prev: unknown, formData: FormData) {
   const lead = await prisma.lead.create({
     data: {
       name,
-      company: String(formData.get("company") || "") || null,
-      email: String(formData.get("email") || "") || null,
-      phone: String(formData.get("phone") || "") || null,
       source,
-      productRequirement: String(formData.get("productRequirement") || "") || null,
       estimatedValue,
       ownerId,
       stageId: firstStage?.id ?? null,
+      ...extractLeadFields(formData),
     },
   });
 
@@ -157,6 +179,54 @@ export async function addActivityAction(_prev: unknown, formData: FormData) {
 
   revalidatePath(`/leads/${leadId}`);
   return { ok: true, analysis };
+}
+
+/** Edit all core + extended fields of a lead. */
+export async function updateLeadAction(_prev: unknown, formData: FormData) {
+  const id = String(formData.get("id") || "");
+  const name = String(formData.get("name") || "").trim();
+  if (!id || !name) return { error: "Name is required." };
+
+  await prisma.lead.update({
+    where: { id },
+    data: {
+      name,
+      source: String(formData.get("source") || "MANUAL") as LeadSource,
+      status: String(formData.get("status") || "NEW") as LeadStatus,
+      estimatedValue: Number(formData.get("estimatedValue") || 0),
+      ...extractLeadFields(formData),
+    },
+  });
+  revalidatePath("/leads");
+  revalidatePath(`/leads/${id}`);
+  return { ok: true };
+}
+
+export async function deleteLeadAction(leadId: string) {
+  await prisma.activity.deleteMany({ where: { leadId } });
+  await prisma.task.updateMany({ where: { leadId }, data: { leadId: null } });
+  await prisma.aiInsight.deleteMany({ where: { leadId } });
+  await prisma.lead.delete({ where: { id: leadId } });
+  revalidatePath("/leads");
+  redirect("/leads");
+}
+
+/** Manually (re)send the professional welcome email + onboarding PDF to a lead. */
+export async function sendLeadWelcomeEmailAction(leadId: string) {
+  const lead = await prisma.lead.findUnique({ where: { id: leadId } });
+  if (!lead) return { error: "Lead not found" };
+  if (!lead.email) return { error: "This lead has no email address." };
+
+  const res = await sendWelcomeEmail(lead);
+  await prisma.activity.create({
+    data: {
+      channel: "EMAIL", direction: "OUTBOUND", leadId: lead.id,
+      subject: `Welcome to AI CRM, ${lead.name}!`,
+      content: res.mocked ? `[MOCK] Welcome email + PDF to ${lead.email}` : `Welcome email + onboarding PDF sent to ${lead.email}`,
+    },
+  });
+  revalidatePath(`/leads/${leadId}`);
+  return { ok: res.ok, mocked: res.mocked, error: res.ok ? undefined : (res.error || "Send failed") };
 }
 
 export async function rescoreLeadAction(leadId: string) {

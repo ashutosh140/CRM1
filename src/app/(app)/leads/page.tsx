@@ -1,8 +1,8 @@
 import Link from "next/link";
 import { Plus, Sparkles } from "lucide-react";
 import { prisma } from "@/lib/prisma";
-import { PageHeader, Badge, ScoreBar, EmptyState } from "@/components/ui";
-import { formatCurrency, formatDate } from "@/lib/utils";
+import { PageHeader, EmptyState } from "@/components/ui";
+import { LeadRow } from "@/components/LeadRow";
 import type { LeadStatus } from "@prisma/client";
 
 const STATUSES: (LeadStatus | "ALL")[] = [
@@ -72,24 +72,16 @@ export default async function LeadsPage({
                   <th className="px-4 py-3 font-medium">Value</th>
                   <th className="px-4 py-3 font-medium">AI Score</th>
                   <th className="px-4 py-3 font-medium">Created</th>
+                  <th className="px-4 py-3 text-right font-medium">Email</th>
                 </tr>
               </thead>
               <tbody>
                 {leads.map((lead) => (
-                  <tr key={lead.id} className="border-t border-slate-100 hover:bg-slate-50/50">
-                    <td className="px-4 py-3">
-                      <Link href={`/leads/${lead.id}`} className="font-medium text-slate-800 hover:text-brand-600">
-                        {lead.name}
-                      </Link>
-                      <p className="text-xs text-slate-400">{lead.company ?? lead.email ?? lead.phone ?? "—"}</p>
-                    </td>
-                    <td className="px-4 py-3"><Badge value={lead.source} /></td>
-                    <td className="px-4 py-3 text-slate-600">{lead.owner?.name ?? "Unassigned"}</td>
-                    <td className="px-4 py-3"><Badge value={lead.status} /></td>
-                    <td className="px-4 py-3 text-slate-600">{formatCurrency(lead.estimatedValue)}</td>
-                    <td className="px-4 py-3"><ScoreBar value={lead.score} /></td>
-                    <td className="px-4 py-3 text-xs text-slate-400">{formatDate(lead.createdAt)}</td>
-                  </tr>
+                  <LeadRow key={lead.id} lead={{
+                    id: lead.id, name: lead.name, company: lead.company, email: lead.email, phone: lead.phone,
+                    source: lead.source, ownerName: lead.owner?.name ?? null, status: lead.status,
+                    estimatedValue: lead.estimatedValue, score: lead.score, createdAt: lead.createdAt.toISOString(),
+                  }} />
                 ))}
               </tbody>
             </table>

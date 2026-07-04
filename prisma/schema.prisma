@@ -203,6 +203,17 @@ model Lead {
   status             LeadStatus @default(NEW)
   productRequirement String?
   estimatedValue     Float      @default(0)
+  // extended profile
+  altPhone           String?
+  website            String?
+  facebook           String?
+  instagram          String?
+  twitter            String?
+  otherLinks         String?
+  heroProducts       String?
+  inquiryReason      String?
+  onboardedAt        DateTime?
+  contractMonths     Int?
   // AI-derived fields
   score              Int        @default(0)   // 0-100 lead quality score
   intent             Int        @default(0)   // 0-100 buying intent

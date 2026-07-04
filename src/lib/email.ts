@@ -15,6 +15,7 @@ export interface SendEmailInput {
   toName?: string;
   subject: string;
   html: string;
+  attachments?: { name: string; contentBase64: string }[];
 }
 
 export async function sendEmail(
@@ -40,6 +41,9 @@ export async function sendEmail(
         to: [{ email: input.to, name: input.toName || input.to }],
         subject: input.subject,
         htmlContent: input.html,
+        ...(input.attachments && input.attachments.length
+          ? { attachment: input.attachments.map((a) => ({ name: a.name, content: a.contentBase64 })) }
+          : {}),
       }),
     });
     if (!res.ok) {
