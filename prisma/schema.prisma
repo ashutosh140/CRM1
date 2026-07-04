@@ -118,6 +118,23 @@ model User {
   receivedMessages Message[]     @relation("ReceivedMessages")
   createdGroups    Group[]       @relation("GroupCreator")
   groupMemberships GroupMember[]
+  clientReports    ClientReport[]
+}
+
+// AI-generated client report (editable + downloadable)
+model ClientReport {
+  id          String   @id @default(cuid())
+  title       String
+  prompt      String?
+  content     String   // markdown/text — editable after generation
+  customerId  String
+  customer    Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  createdById String?
+  createdBy   User?    @relation(fields: [createdById], references: [id], onDelete: SetNull)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([customerId, createdAt])
 }
 
 // Internal team chat: 1-on-1 (recipientId set) OR group (groupId set)
@@ -233,6 +250,7 @@ model Customer {
   invoices   Invoice[]
   activities Activity[]
   insights   AiInsight[]
+  reports    ClientReport[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

@@ -39,7 +39,7 @@ export function Sidebar({ role }: { role: Role }) {
           <p className="text-[10px] text-slate-400">Business OS</p>
         </div>
       </div>
-      <nav className="flex-1 space-y-1 p-3">
+      <nav className="flex-1 space-y-1 overflow-y-auto p-3">
         {NAV.filter((n) => RANK[role] >= RANK[n.min as Role]).map((item) => {
           const active = pathname === item.href || pathname.startsWith(item.href + "/");
           const Icon = item.icon;

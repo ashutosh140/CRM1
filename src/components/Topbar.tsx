@@ -7,7 +7,7 @@ import type { Role } from "@prisma/client";
 
 export function Topbar({ name, role }: { name: string; role: Role }) {
   return (
-    <header className="flex h-16 items-center justify-between border-b border-slate-200 bg-white px-6">
+    <header className="flex h-16 shrink-0 items-center justify-between border-b border-slate-200 bg-white px-6">
       <div className="text-sm text-slate-500">
         Welcome back, <span className="font-medium text-slate-800">{name.split(" ")[0]}</span>
       </div>

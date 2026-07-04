@@ -4,6 +4,7 @@ import { ArrowLeft, Mail, Phone, Building2, Heart, Brain } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { digitalTwin } from "@/lib/ai";
 import { Card, Badge, ScoreBar, PageHeader } from "@/components/ui";
+import { ClientReportPanel } from "@/components/ClientReportPanel";
 import { formatCurrency, formatDate } from "@/lib/utils";
 
 export default async function CustomerDetailPage({
@@ -19,6 +20,7 @@ export default async function CustomerDetailPage({
       quotations: { orderBy: { createdAt: "desc" }, take: 10 },
       invoices: { orderBy: { createdAt: "desc" }, take: 10 },
       activities: { orderBy: { createdAt: "desc" }, take: 10 },
+      reports: { orderBy: { createdAt: "desc" }, take: 20 },
     },
   });
   if (!customer) notFound();
@@ -137,6 +139,16 @@ export default async function CustomerDetailPage({
             )}
           </Card>
         </div>
+      </div>
+
+      <div className="mt-6">
+        <ClientReportPanel
+          customerId={customer.id}
+          customerName={customer.name}
+          initialReports={customer.reports.map((r) => ({
+            id: r.id, title: r.title, content: r.content, createdAt: r.createdAt.toISOString(),
+          }))}
+        />
       </div>
     </div>
   );

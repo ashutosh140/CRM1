@@ -1,7 +1,7 @@
 "use client";
 
 import {
-  Area, AreaChart, ResponsiveContainer, Tooltip, XAxis, YAxis,
+  Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis,
 } from "recharts";
 
 export function RevenueChart({
@@ -14,49 +14,35 @@ export function RevenueChart({
 
   return (
     <ResponsiveContainer width="100%" height={260}>
-      <AreaChart data={data} margin={{ top: 10, right: 12, left: 0, bottom: 0 }}>
-        <defs>
-          <linearGradient id="rev" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#6366f1" stopOpacity={0.35} />
-            <stop offset="100%" stopColor="#6366f1" stopOpacity={0} />
-          </linearGradient>
-        </defs>
-
-        {/* clean axes only — no grid, no dashes */}
+      <LineChart data={data} margin={{ top: 16, right: 16, left: 0, bottom: 0 }}>
+        {/* clean — no grid, no boxes */}
         <XAxis
           dataKey="month"
           tick={{ fontSize: 12, fill: "#94a3b8" }}
           tickLine={false}
-          axisLine={{ stroke: "#cbd5e1" }}
-          padding={{ left: 8, right: 8 }}
+          axisLine={false}
+          padding={{ left: 12, right: 12 }}
         />
         <YAxis
           tick={{ fontSize: 12, fill: "#94a3b8" }}
           tickLine={false}
           axisLine={false}
-          width={52}
+          width={48}
           tickFormatter={(v) => (v >= 1000 ? `${(v / 1000).toFixed(0)}k` : `${v}`)}
         />
-
         <Tooltip
-          formatter={(v: number, name) => [fmt(v), name === "revenue" ? "Collected" : "Billed"]}
-          contentStyle={{
-            borderRadius: 10, border: "1px solid #e2e8f0",
-            boxShadow: "0 4px 12px rgba(0,0,0,0.08)", fontSize: 12,
-          }}
+          formatter={(v: number) => [fmt(v), "Collected"]}
+          contentStyle={{ borderRadius: 10, border: "1px solid #e2e8f0", fontSize: 12 }}
         />
-
-        <Area
-          type="monotone"
+        <Line
+          type="linear"
           dataKey="revenue"
-          stroke="#6366f1"
+          stroke="#ef4444"
           strokeWidth={2.5}
-          fill="url(#rev)"
-          dot={false}
-          activeDot={{ r: 4, strokeWidth: 2, stroke: "#fff", fill: "#6366f1" }}
-          name="revenue"
+          dot={{ r: 4, fill: "#ef4444", strokeWidth: 0 }}
+          activeDot={{ r: 6, fill: "#ef4444", stroke: "#fff", strokeWidth: 2 }}
         />
-      </AreaChart>
+      </LineChart>
     </ResponsiveContainer>
   );
 }

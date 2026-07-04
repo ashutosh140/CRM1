@@ -8,6 +8,11 @@ async function main() {
 
   // ── wipe (dev only) ──
   await prisma.$transaction([
+    prisma.clientReport.deleteMany(),
+    prisma.message.deleteMany(),
+    prisma.groupMember.deleteMany(),
+    prisma.group.deleteMany(),
+    prisma.meeting.deleteMany(),
     prisma.activity.deleteMany(),
     prisma.aiInsight.deleteMany(),
     prisma.invoice.deleteMany(),
@@ -64,6 +69,40 @@ async function main() {
     customers.push(await prisma.customer.create({
       data: { ...customerData[i], ownerId: salesTeam[i % salesTeam.length].id },
     }));
+  }
+
+  // Sample conversation history per customer (so AI reports have context)
+  const convos: Record<number, Array<{ dir: "INBOUND" | "OUTBOUND"; ch: "WHATSAPP" | "EMAIL" | "CALL"; text: string; sentiment: string }>> = {
+    0: [
+      { dir: "INBOUND", ch: "WHATSAPP", text: "Loved the last batch of modular units. Planning a bigger order for our Pune project.", sentiment: "positive" },
+      { dir: "OUTBOUND", ch: "EMAIL", text: "Thanks! Sharing a volume-discount proposal for 20+ units.", sentiment: "positive" },
+      { dir: "INBOUND", ch: "CALL", text: "Discussed timelines — they need delivery within 3 weeks. Budget approved.", sentiment: "positive" },
+    ],
+    2: [
+      { dir: "OUTBOUND", ch: "EMAIL", text: "Following up on your renewal — haven't heard back in a while.", sentiment: "neutral" },
+      { dir: "INBOUND", ch: "WHATSAPP", text: "Sorry, been busy. Pricing feels a bit high vs a competitor.", sentiment: "negative" },
+    ],
+    3: [
+      { dir: "OUTBOUND", ch: "CALL", text: "Left a voicemail about the pending support renewal.", sentiment: "neutral" },
+      { dir: "INBOUND", ch: "EMAIL", text: "We are evaluating other vendors this quarter.", sentiment: "negative" },
+    ],
+    4: [
+      { dir: "INBOUND", ch: "EMAIL", text: "The support team has been excellent. Interested in the premium tier.", sentiment: "positive" },
+      { dir: "OUTBOUND", ch: "WHATSAPP", text: "Great to hear! Sending premium-tier details and an upgrade offer.", sentiment: "positive" },
+    ],
+  };
+  for (const [idx, msgs] of Object.entries(convos)) {
+    const c = customers[Number(idx)];
+    for (let k = 0; k < msgs.length; k++) {
+      const m = msgs[k];
+      await prisma.activity.create({
+        data: {
+          customerId: c.id, channel: m.ch, direction: m.dir, content: m.text,
+          sentiment: m.sentiment, userId: c.ownerId,
+          createdAt: new Date(Date.now() - (msgs.length - k) * 3 * 86400000),
+        },
+      });
+    }
   }
 
   // ── Leads ──

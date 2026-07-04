@@ -6,7 +6,6 @@ import { getCurrentUser } from "@/lib/auth";
 import { getDashboardStats, getMonthlyRevenue } from "@/lib/queries";
 import { StatCard, Card, PageHeader, ScoreBar, Badge } from "@/components/ui";
 import { RevenueChart } from "@/components/RevenueChart";
-import { AiAssistant } from "@/components/AiAssistant";
 import { formatCurrency } from "@/lib/utils";
 
 export default async function DashboardPage() {
@@ -15,15 +14,6 @@ export default async function DashboardPage() {
     getDashboardStats(),
     getMonthlyRevenue(),
   ]);
-
-  const metrics = {
-    totalLeads: stats.totalLeads,
-    openLeads: stats.openLeads,
-    winRate: stats.winRate,
-    pipelineValue: stats.pipelineValue,
-    pendingTasks: stats.pendingTasks,
-    revenue: stats.revenue,
-  };
 
   return (
     <div>
@@ -40,19 +30,14 @@ export default async function DashboardPage() {
         <StatCard label="Revenue Collected" value={formatCurrency(stats.revenue)} sub={`${formatCurrency(stats.outstanding)} outstanding`} icon={<Wallet size={20} />} accent="brand" />
       </div>
 
-      <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-3">
-        {/* Revenue chart */}
-        <Card className="lg:col-span-2">
-          <div className="mb-4 flex items-center justify-between">
-            <h2 className="font-semibold text-slate-900">Revenue Trend</h2>
-            <span className="text-xs text-slate-400">Last 6 months</span>
-          </div>
-          <RevenueChart data={monthly} />
-        </Card>
-
-        {/* AI Business Assistant — loads client-side so the dashboard is instant */}
-        <AiAssistant metrics={metrics} />
-      </div>
+      {/* Revenue chart (full width) */}
+      <Card className="mt-6">
+        <div className="mb-4 flex items-center justify-between">
+          <h2 className="font-semibold text-slate-900">Revenue Trend</h2>
+          <span className="text-xs text-slate-400">Last 6 months</span>
+        </div>
+        <RevenueChart data={monthly} />
+      </Card>
 
       {/* Hot leads */}
       <Card className="mt-6">

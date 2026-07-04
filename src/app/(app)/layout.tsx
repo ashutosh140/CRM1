@@ -12,7 +12,7 @@ export default async function AppLayout({
   if (!user) redirect("/login");
 
   return (
-    <div className="flex min-h-screen">
+    <div className="flex h-screen overflow-hidden">
       <Sidebar role={user.role} />
       <div className="flex min-w-0 flex-1 flex-col">
         <Topbar name={user.name} role={user.role} />
