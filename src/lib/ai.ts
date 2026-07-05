@@ -19,19 +19,6 @@ const client = aiEnabled
   ? new OpenAI({ apiKey, timeout: 7000, maxRetries: 0 })
   : null;
 
-// ── Kimi (Moonshot AI) — OpenAI-compatible. Preferred for email drafts + strategy PDFs. ──
-const kimiKey = process.env.KIMI_API_KEY?.trim();
-const KIMI_MODEL = process.env.KIMI_MODEL?.trim() || "kimi-k2-0711-preview";
-const kimiClient = kimiKey
-  ? new OpenAI({
-      apiKey: kimiKey,
-      baseURL: process.env.KIMI_BASE_URL?.trim() || "https://api.moonshot.ai/v1",
-      timeout: 30000,
-      maxRetries: 0,
-    })
-  : null;
-export const kimiEnabled = Boolean(kimiKey);
-
 /** Core JSON call against a given client/model. */
 async function callJSON<T>(
   c: OpenAI, model: string,
@@ -60,17 +47,10 @@ async function callJSON<T>(
   }
 }
 
-/** Ask via OpenAI (default). */
+/** Ask via OpenAI (used everywhere). */
 async function askJSON<T>(system: string, user: string, fallback: T, opts?: { timeout?: number; maxTokens?: number }) {
   if (!client) return { data: fallback, mocked: true };
   return callJSON(client, MODEL, system, user, fallback, opts);
-}
-
-/** Ask via Kimi when configured, else OpenAI, else heuristic. */
-async function askJSONPreferKimi<T>(system: string, user: string, fallback: T, opts?: { timeout?: number; maxTokens?: number }) {
-  if (kimiClient) return callJSON(kimiClient, KIMI_MODEL, system, user, fallback, opts);
-  if (client) return callJSON(client, MODEL, system, user, fallback, opts);
-  return { data: fallback, mocked: true };
 }
 
 // ───────────────────────── Heuristics (mock brains) ─────────────────────────
@@ -443,7 +423,7 @@ export interface LeadEmailDraft {
   body: string;
 }
 
-/** Draft a polite, professional outreach email to a lead (Kimi-preferred). */
+/** Draft a polite, professional outreach email to a lead (OpenAI). */
 export async function draftLeadEmail(lead: {
   name: string; company?: string | null; productRequirement?: string | null;
   inquiryReason?: string | null; heroProducts?: string | null; contractMonths?: number | null;
@@ -457,7 +437,7 @@ export async function draftLeadEmail(lead: {
       `We've attached a document outlining the next steps and our proposed strategy. Please take a look, and feel free to reach out with any questions.\n\n` +
       `Looking forward to partnering with you.\n\nWarm regards,\nThe AI CRM Team`,
   };
-  return askJSONPreferKimi<LeadEmailDraft>(
+  return askJSON<LeadEmailDraft>(
     `You write warm, professional B2B outreach emails. Return JSON: subject(string), body(string). ` +
       `Keep it polite, concise, personalised, and confidence-building. Mention that a details/strategy PDF is attached.`,
     JSON.stringify(lead),
@@ -471,7 +451,7 @@ export interface StrategyContent {
   sections: { heading: string; body: string }[];
 }
 
-/** Generate a comprehensive next-steps + strategy document (for the PDF). Kimi-preferred. */
+/** Generate a comprehensive next-steps + strategy document (for the PDF). OpenAI. */
 export async function generateStrategyContent(lead: {
   name: string; company?: string | null; productRequirement?: string | null;
   inquiryReason?: string | null; heroProducts?: string | null; contractMonths?: number | null;
@@ -487,7 +467,7 @@ export async function generateStrategyContent(lead: {
       { heading: "Next Action", body: "We recommend scheduling a kick-off call this week to get started. We're excited to partner with you." },
     ],
   };
-  return askJSONPreferKimi<StrategyContent>(
+  return askJSON<StrategyContent>(
     `You are a senior strategist. Produce a comprehensive, client-ready plan covering upcoming steps, our strategy, ` +
       `timeline/commitment and next actions. Return JSON: { "title": string, "sections": [ { "heading": string, "body": string } ] }. ` +
       `4-6 sections, professional and specific to the client.`,

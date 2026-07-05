@@ -214,7 +214,7 @@ export async function deleteLeadAction(leadId: string) {
   redirect("/leads");
 }
 
-/** Draft an editable email for a lead (Kimi-preferred) — used by the composer. */
+/** Draft an editable email for a lead (OpenAI) — used by the composer. */
 export async function draftLeadEmailAction(leadId: string) {
   const lead = await prisma.lead.findUnique({ where: { id: leadId } });
   if (!lead) return { error: "Lead not found" };
