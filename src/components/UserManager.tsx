@@ -1,7 +1,7 @@
 "use client";
 
-import { useActionState, useTransition } from "react";
-import { UserPlus, Power } from "lucide-react";
+import { useActionState, useTransition, useState } from "react";
+import { UserPlus, Power, Users } from "lucide-react";
 import { createUserAction, toggleUserActiveAction } from "@/app/actions/users";
 import { Card, Badge } from "@/components/ui";
 import { initials } from "@/lib/utils";
@@ -9,15 +9,44 @@ import type { Role } from "@prisma/client";
 
 interface U { id: string; name: string; email: string; role: Role; isActive: boolean; }
 
+const ROLE_TABS: { key: Role; label: string }[] = [
+  { key: "SUPER_ADMIN", label: "Super Admin" },
+  { key: "ADMIN", label: "Admin" },
+  { key: "MANAGER", label: "Manager" },
+  { key: "SALES", label: "Sales" },
+  { key: "EMPLOYEE", label: "Employee" },
+];
+
 export function UserManager({ users, meId }: { users: U[]; meId: string }) {
   const [state, formAction, pending] = useActionState(createUserAction, null);
+  const [tab, setTab] = useState<Role | "ALL">("ALL");
+
+  const count = (r: Role) => users.filter((u) => u.role === r).length;
+  const shown = tab === "ALL" ? users : users.filter((u) => u.role === tab);
 
   return (
     <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
       <Card className="lg:col-span-2">
-        <h2 className="mb-3 font-semibold text-slate-900">Team Members</h2>
+        <div className="mb-3 flex items-center gap-2">
+          <Users size={18} className="text-brand-600" />
+          <h2 className="font-semibold text-slate-900">Team Members</h2>
+          <span className="text-xs text-slate-400">({users.length})</span>
+        </div>
+
+        {/* role category tabs */}
+        <div className="mb-3 flex flex-wrap gap-1.5 border-b border-slate-100 pb-3">
+          <TabChip label="All" n={users.length} active={tab === "ALL"} onClick={() => setTab("ALL")} />
+          {ROLE_TABS.map((t) => (
+            <TabChip key={t.key} label={t.label} n={count(t.key)} active={tab === t.key} onClick={() => setTab(t.key)} />
+          ))}
+        </div>
+
         <div className="divide-y divide-slate-100">
-          {users.map((u) => <UserRow key={u.id} u={u} meId={meId} />)}
+          {shown.length === 0 ? (
+            <p className="py-8 text-center text-sm text-slate-400">No users in this role yet.</p>
+          ) : (
+            shown.map((u) => <UserRow key={u.id} u={u} meId={meId} />)
+          )}
         </div>
       </Card>
 
@@ -41,6 +70,22 @@ export function UserManager({ users, meId }: { users: U[]; meId: string }) {
         </form>
       </Card>
     </div>
+  );
+}
+
+function TabChip({ label, n, active, onClick }: { label: string; n: number; active: boolean; onClick: () => void }) {
+  return (
+    <button
+      onClick={onClick}
+      className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-medium transition ${
+        active
+          ? "border-brand-300 bg-brand-50 text-brand-700"
+          : "border-slate-200 bg-white text-slate-600 hover:bg-slate-50"
+      }`}
+    >
+      {label}
+      <span className={`rounded-full px-1.5 text-[10px] ${active ? "bg-brand-200 text-brand-800" : "bg-slate-100 text-slate-500"}`}>{n}</span>
+    </button>
   );
 }
 
