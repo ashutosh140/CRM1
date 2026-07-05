@@ -133,6 +133,7 @@ model User {
   groupMemberships GroupMember[]
   clientReports    ClientReport[]
   taskMessages     TaskMessage[]
+  reportSends      ReportSend[]
 }
 
 // AI-generated client report (editable + downloadable)
@@ -145,10 +146,24 @@ model ClientReport {
   customer    Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
   createdById String?
   createdBy   User?    @relation(fields: [createdById], references: [id], onDelete: SetNull)
+  sends       ReportSend[]
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
   @@index([customerId, createdAt])
+}
+
+// A log entry each time a report is emailed to the client (history / audit).
+model ReportSend {
+  id        String       @id @default(cuid())
+  reportId  String
+  report    ClientReport @relation(fields: [reportId], references: [id], onDelete: Cascade)
+  sentById  String?
+  sentBy    User?        @relation(fields: [sentById], references: [id])
+  sentTo    String?      // recipient email
+  createdAt DateTime     @default(now())
+
+  @@index([reportId, createdAt])
 }
 
 // Internal team chat: 1-on-1 (recipientId set) OR group (groupId set)

@@ -85,6 +85,11 @@ export async function sendReportEmailAction(reportId: string, title: string, con
     html: emailTemplate({ title: title || "Your Report", body: mdToHtml(content) }),
   });
 
+  // log this send in the report history
+  await prisma.reportSend.create({
+    data: { reportId: report.id, sentById: me.id, sentTo: report.customer.email },
+  });
+
   await prisma.activity.create({
     data: {
       channel: "EMAIL", direction: "OUTBOUND", customerId: report.customerId,

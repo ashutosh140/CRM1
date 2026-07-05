@@ -6,6 +6,7 @@ import { digitalTwin } from "@/lib/ai";
 import { Card, Badge, PageHeader } from "@/components/ui";
 import { ClientReportPanel } from "@/components/ClientReportPanel";
 import { ClientInfoPanel } from "@/components/ClientInfoPanel";
+import { ReportHistory } from "@/components/ReportHistory";
 import { formatCurrency, formatDate } from "@/lib/utils";
 
 export default async function CustomerDetailPage({
@@ -21,7 +22,13 @@ export default async function CustomerDetailPage({
       quotations: { orderBy: { createdAt: "desc" }, take: 10 },
       invoices: { orderBy: { createdAt: "desc" }, take: 10 },
       activities: { orderBy: { createdAt: "desc" }, take: 10 },
-      reports: { orderBy: { createdAt: "desc" }, take: 20 },
+      reports: {
+        orderBy: { createdAt: "desc" }, take: 50,
+        include: {
+          createdBy: { select: { name: true } },
+          sends: { orderBy: { createdAt: "desc" }, include: { sentBy: { select: { name: true } } } },
+        },
+      },
       clientInfo: { orderBy: { createdAt: "desc" }, take: 50 },
     },
   });
@@ -151,6 +158,16 @@ export default async function CustomerDetailPage({
             )}
           </Card>
         </div>
+      </div>
+
+      <div className="mt-6">
+        <ReportHistory reports={customer.reports.map((r) => ({
+          id: r.id, title: r.title, createdAt: r.createdAt.toISOString(),
+          createdByName: r.createdBy?.name ?? null,
+          sends: r.sends.map((s) => ({
+            id: s.id, sentByName: s.sentBy?.name ?? null, sentTo: s.sentTo, createdAt: s.createdAt.toISOString(),
+          })),
+        }))} />
       </div>
 
       <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-2">
