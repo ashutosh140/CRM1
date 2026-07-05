@@ -23,7 +23,7 @@ const NAV = [
   { href: "/settings", label: "Settings", icon: Settings, min: "ADMIN" },
 ] as const;
 
-const RANK: Record<Role, number> = { ADMIN: 4, MANAGER: 3, SALES: 2, EMPLOYEE: 1 };
+const RANK: Record<Role, number> = { SUPER_ADMIN: 5, ADMIN: 4, MANAGER: 3, SALES: 2, EMPLOYEE: 1 };
 
 export function Sidebar({ role }: { role: Role }) {
   const pathname = usePathname();

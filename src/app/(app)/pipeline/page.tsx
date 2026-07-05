@@ -1,12 +1,17 @@
+import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
+import { getCurrentUser } from "@/lib/auth";
+import { leadScope } from "@/lib/scope";
 import { PageHeader, EmptyState } from "@/components/ui";
 import { PipelineBoard } from "@/components/PipelineBoard";
 
 export default async function PipelinePage() {
+  const me = await getCurrentUser();
+  if (!me) redirect("/login");
   const [stages, leads] = await Promise.all([
     prisma.pipelineStage.findMany({ orderBy: { order: "asc" } }),
     prisma.lead.findMany({
-      where: { status: { notIn: ["WON", "LOST"] } },
+      where: { ...leadScope(me), status: { notIn: ["WON", "LOST"] } },
       include: { owner: { select: { name: true } } },
       orderBy: { score: "desc" },
     }),

@@ -47,16 +47,9 @@ function LoginForm() {
         </button>
       </form>
 
-      <p className="mt-6 text-center text-sm text-slate-500 dark:text-slate-400">
-        Don&apos;t have an account?{" "}
-        <Link href="/signup" className="font-medium text-brand-600 hover:underline">Create one</Link>
+      <p className="mt-6 text-center text-xs text-slate-400 dark:text-slate-500">
+        This is a private, invite-only workspace. Accounts are created by your administrator.
       </p>
-
-      <div className="mt-6 rounded-lg bg-slate-50 p-3 text-xs text-slate-600 dark:bg-slate-800/60 dark:text-slate-300">
-        <p className="font-medium text-slate-700 dark:text-slate-200">Demo logins (after seeding)</p>
-        <p>Admin — admin@aicrm.app / admin123</p>
-        <p>Sales — sales@aicrm.app / sales123</p>
-      </div>
     </>
   );
 }

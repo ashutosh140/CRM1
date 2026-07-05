@@ -30,8 +30,8 @@ export function UserManager({ users, meId }: { users: U[]; meId: string }) {
           <input name="name" className="input" placeholder="Full name" required />
           <input name="email" type="email" className="input" placeholder="email@company.com" required />
           <input name="password" type="password" className="input" placeholder="Temp password" required />
-          <select name="role" className="input">
-            {["ADMIN", "MANAGER", "SALES", "EMPLOYEE"].map((r) => <option key={r}>{r}</option>)}
+          <select name="role" className="input" defaultValue="SALES">
+            {["SUPER_ADMIN", "ADMIN", "MANAGER", "SALES", "EMPLOYEE"].map((r) => <option key={r}>{r}</option>)}
           </select>
           {state?.error && <p className="text-sm text-red-600">{state.error}</p>}
           {state?.ok && <p className="text-sm text-emerald-600">User added ✅</p>}

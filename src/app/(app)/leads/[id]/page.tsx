@@ -1,9 +1,10 @@
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import {
   ArrowLeft, Sparkles, Send, Clock,
 } from "lucide-react";
 import { prisma } from "@/lib/prisma";
+import { getCurrentUser, canSeeAll } from "@/lib/auth";
 import { suggestFollowup } from "@/lib/ai";
 import { Card, Badge, ScoreBar, PageHeader } from "@/components/ui";
 import { StatusSelect, ActivityForm, RescoreButton } from "@/components/LeadActions";
@@ -15,6 +16,8 @@ export default async function LeadDetailPage({
 }: {
   params: Promise<{ id: string }>;
 }) {
+  const me = await getCurrentUser();
+  if (!me) redirect("/login");
   const { id } = await params;
   const lead = await prisma.lead.findUnique({
     where: { id },
@@ -25,6 +28,8 @@ export default async function LeadDetailPage({
     },
   });
   if (!lead) notFound();
+  // SALES/EMPLOYEE may only open their own leads.
+  if (!canSeeAll(me.role) && lead.ownerId !== me.id) notFound();
 
   const { data: followup } = await suggestFollowup({
     name: lead.name,

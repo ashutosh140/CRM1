@@ -1,6 +1,9 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { Plus, Sparkles } from "lucide-react";
 import { prisma } from "@/lib/prisma";
+import { getCurrentUser } from "@/lib/auth";
+import { leadScope } from "@/lib/scope";
 import { PageHeader, EmptyState } from "@/components/ui";
 import { LeadRow } from "@/components/LeadRow";
 import { LeadSearch } from "@/components/LeadSearch";
@@ -41,9 +44,11 @@ export default async function LeadsPage({
 }: {
   searchParams: Promise<{ status?: string; q?: string; date?: string; from?: string; to?: string }>;
 }) {
+  const me = await getCurrentUser();
+  if (!me) redirect("/login");
   const { status, q, date, from, to } = await searchParams;
 
-  const where: Prisma.LeadWhereInput = {};
+  const where: Prisma.LeadWhereInput = { ...leadScope(me) };
   if (status && status !== "ALL") where.status = status as LeadStatus;
   const range = computeDateRange(date, from, to);
   if (range) where.createdAt = range;

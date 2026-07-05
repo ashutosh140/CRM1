@@ -58,29 +58,12 @@ export async function logoutAction() {
   redirect("/login");
 }
 
-/** Create a new account and sign in. */
-export async function signupAction(_prev: unknown, formData: FormData) {
-  const name = String(formData.get("name") || "").trim();
-  const email = String(formData.get("email") || "").trim().toLowerCase();
-  const password = String(formData.get("password") || "");
-  const confirm = String(formData.get("confirm") || "");
-
-  if (!name || !email || !password) return { error: "All fields are required." };
-  const rl = await limit("signup", 5, 60_000);
-  if (!rl.ok) return { error: `Too many attempts. Please try again in ${rl.retryAfter}s.` };
-  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return { error: "Please enter a valid email address." };
-  if (password.length < 6) return { error: "Password must be at least 6 characters." };
-  if (password !== confirm) return { error: "Passwords do not match." };
-
-  const existing = await prisma.user.findUnique({ where: { email } });
-  if (existing) return { error: "An account with this email already exists. Try signing in." };
-
-  const user = await prisma.user.create({
-    data: { name, email, passwordHash: await hashPassword(password), role: "SALES" },
-  });
-
-  await createSession({ userId: user.id, email: user.email, name: user.name, role: user.role });
-  redirect("/dashboard");
+/** Public sign-up is DISABLED — this is an invite-only CRM. Only accounts that an
+ *  Admin/Super Admin creates from Settings can sign in. */
+export async function signupAction(_prev: unknown, _formData: FormData) {
+  return {
+    error: "Sign-up is disabled. This CRM is invite-only — please ask your administrator to create an account for you.",
+  };
 }
 
 /** Step 1 of reset: email a 6-digit OTP and stash it in a signed cookie. */

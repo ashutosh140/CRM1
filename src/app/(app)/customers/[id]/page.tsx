@@ -1,7 +1,8 @@
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { ArrowLeft, Mail, Phone, Building2 } from "lucide-react";
 import { prisma } from "@/lib/prisma";
+import { getCurrentUser, canSeeAll } from "@/lib/auth";
 import { Card, Badge, PageHeader } from "@/components/ui";
 import { Tabs } from "@/components/Tabs";
 import { DigitalTwinCard } from "@/components/DigitalTwinCard";
@@ -15,6 +16,8 @@ export default async function CustomerDetailPage({
 }: {
   params: Promise<{ id: string }>;
 }) {
+  const me = await getCurrentUser();
+  if (!me) redirect("/login");
   const { id } = await params;
   const customer = await prisma.customer.findUnique({
     where: { id },
@@ -34,6 +37,8 @@ export default async function CustomerDetailPage({
     },
   });
   if (!customer) notFound();
+  // SALES/EMPLOYEE may only open their own customers.
+  if (!canSeeAll(me.role) && customer.ownerId !== me.id) notFound();
 
   const overview = (
     <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">

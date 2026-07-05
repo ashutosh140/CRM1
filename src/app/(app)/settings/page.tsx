@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
-import { getCurrentUser } from "@/lib/auth";
+import { getCurrentUser, hasRole } from "@/lib/auth";
 import { aiEnabled } from "@/lib/ai";
 import { PageHeader, Card } from "@/components/ui";
 import { UserManager } from "@/components/UserManager";
@@ -8,7 +8,7 @@ import { UserManager } from "@/components/UserManager";
 export default async function SettingsPage() {
   const me = await getCurrentUser();
   if (!me) redirect("/login");
-  if (me.role !== "ADMIN") {
+  if (!hasRole(me.role, "ADMIN")) {
     return (
       <div>
         <PageHeader title="Settings" />

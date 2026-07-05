@@ -1,11 +1,17 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { Plus } from "lucide-react";
 import { prisma } from "@/lib/prisma";
+import { getCurrentUser } from "@/lib/auth";
+import { customerScope } from "@/lib/scope";
 import { PageHeader, EmptyState } from "@/components/ui";
 import { formatCurrency, initials } from "@/lib/utils";
 
 export default async function CustomersPage() {
+  const me = await getCurrentUser();
+  if (!me) redirect("/login");
   const customers = await prisma.customer.findMany({
+    where: customerScope(me),
     orderBy: { healthScore: "desc" },
     include: {
       owner: { select: { name: true } },

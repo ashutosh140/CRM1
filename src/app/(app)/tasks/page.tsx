@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/auth";
+import { taskScope } from "@/lib/scope";
 import { PageHeader, EmptyState } from "@/components/ui";
 import { TaskCreateForm } from "@/components/TaskCreateForm";
 import { TaskSearch } from "@/components/TaskSearch";
@@ -15,10 +16,8 @@ export default async function TasksPage({
   if (!me) return null;
   const { q } = await searchParams;
 
-  // tasks where I'm the assigner OR the assignee
-  const where: Prisma.TaskWhereInput = {
-    OR: [{ creatorId: me.id }, { assigneeId: me.id }],
-  };
+  // SALES/EMPLOYEE: only tasks I created or am assigned. MANAGER+: all tasks.
+  const where: Prisma.TaskWhereInput = { ...taskScope(me) };
   if (q && q.trim()) {
     const term = q.trim();
     where.AND = {

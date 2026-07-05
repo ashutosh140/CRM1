@@ -1,6 +1,11 @@
 import { prisma } from "./prisma";
+import type { Role } from "@prisma/client";
+import { leadScope, customerScope, invoiceScope, taskScope } from "./scope";
 
-export async function getDashboardStats() {
+type ScopeUser = { id: string; role: Role };
+
+export async function getDashboardStats(user: ScopeUser) {
+  const L = leadScope(user);
   const [
     totalLeads,
     wonLeads,
@@ -11,15 +16,15 @@ export async function getDashboardStats() {
     invoices,
     hotLeads,
   ] = await Promise.all([
-    prisma.lead.count(),
-    prisma.lead.count({ where: { status: "WON" } }),
-    prisma.lead.count({ where: { status: "LOST" } }),
-    prisma.lead.count({ where: { status: { notIn: ["WON", "LOST"] } } }),
-    prisma.customer.count(),
-    prisma.task.count({ where: { status: { not: "DONE" } } }),
-    prisma.invoice.findMany({ select: { total: true, paidAmount: true, status: true } }),
+    prisma.lead.count({ where: L }),
+    prisma.lead.count({ where: { ...L, status: "WON" } }),
+    prisma.lead.count({ where: { ...L, status: "LOST" } }),
+    prisma.lead.count({ where: { ...L, status: { notIn: ["WON", "LOST"] } } }),
+    prisma.customer.count({ where: customerScope(user) }),
+    prisma.task.count({ where: { ...taskScope(user), status: { not: "DONE" } } }),
+    prisma.invoice.findMany({ where: invoiceScope(user), select: { total: true, paidAmount: true, status: true } }),
     prisma.lead.findMany({
-      where: { status: { notIn: ["WON", "LOST"] } },
+      where: { ...L, status: { notIn: ["WON", "LOST"] } },
       orderBy: { score: "desc" },
       take: 5,
       include: { owner: { select: { name: true } } },
@@ -34,6 +39,7 @@ export async function getDashboardStats() {
   // pipeline funnel by status
   const statusGroups = await prisma.lead.groupBy({
     by: ["status"],
+    where: L,
     _count: { _all: true },
     _sum: { estimatedValue: true },
   });
@@ -58,9 +64,10 @@ export async function getDashboardStats() {
   };
 }
 
-export async function getMonthlyRevenue() {
+export async function getMonthlyRevenue(user: ScopeUser) {
   // group invoices by created month (last 6 months) — predictive dashboard input
   const invoices = await prisma.invoice.findMany({
+    where: invoiceScope(user),
     select: { paidAmount: true, total: true, createdAt: true },
   });
   const buckets = new Map<string, { revenue: number; billed: number }>();

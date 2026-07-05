@@ -1,4 +1,7 @@
+import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
+import { getCurrentUser } from "@/lib/auth";
+import { invoiceScope } from "@/lib/scope";
 import { PageHeader, StatCard, EmptyState } from "@/components/ui";
 import { InvoiceRow } from "@/components/InvoiceRow";
 import { ExportInvoicesButton } from "@/components/ExportInvoicesButton";
@@ -6,7 +9,10 @@ import { formatCurrency, formatDate } from "@/lib/utils";
 import { Wallet, Clock, CheckCircle2 } from "lucide-react";
 
 export default async function InvoicesPage() {
+  const me = await getCurrentUser();
+  if (!me) redirect("/login");
   const invoices = await prisma.invoice.findMany({
+    where: invoiceScope(me),
     orderBy: { createdAt: "desc" },
     include: { customer: { select: { name: true } } },
     take: 100,

@@ -1,5 +1,7 @@
+import { redirect } from "next/navigation";
 import { TrendingUp, Users, AlertTriangle, Trophy } from "lucide-react";
 import { prisma } from "@/lib/prisma";
+import { getCurrentUser, hasRole } from "@/lib/auth";
 import { getMonthlyRevenue } from "@/lib/queries";
 import { Card, PageHeader, StatCard, ScoreBar, Badge } from "@/components/ui";
 import { FunnelChart } from "@/components/FunnelChart";
@@ -18,8 +20,11 @@ function forecastNextMonth(series: number[]) {
 }
 
 export default async function ReportsPage() {
+  const me = await getCurrentUser();
+  if (!me) redirect("/login");
+  if (!hasRole(me.role, "MANAGER")) redirect("/dashboard");
   const [monthly, funnelGroups, performances, atRisk, openPipeline] = await Promise.all([
-    getMonthlyRevenue(),
+    getMonthlyRevenue(me),
     prisma.lead.groupBy({ by: ["status"], _count: { _all: true } }),
     prisma.performance.findMany({
       orderBy: { overall: "desc" },

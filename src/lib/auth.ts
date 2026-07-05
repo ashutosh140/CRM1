@@ -105,6 +105,7 @@ export const getCurrentUser = cache(async () => {
 });
 
 export const ROLE_RANK: Record<Role, number> = {
+  SUPER_ADMIN: 5,
   ADMIN: 4,
   MANAGER: 3,
   SALES: 2,
@@ -113,4 +114,10 @@ export const ROLE_RANK: Record<Role, number> = {
 
 export function hasRole(role: Role, atLeast: Role) {
   return ROLE_RANK[role] >= ROLE_RANK[atLeast];
+}
+
+/** Roles that see ALL org-wide data (monitor everyone). Everyone below sees
+ *  only records they own / are assigned. */
+export function canSeeAll(role: Role) {
+  return ROLE_RANK[role] >= ROLE_RANK.MANAGER;
 }

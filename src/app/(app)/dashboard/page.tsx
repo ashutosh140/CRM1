@@ -10,9 +10,10 @@ import { formatCurrency } from "@/lib/utils";
 
 export default async function DashboardPage() {
   const user = await getCurrentUser();
+  if (!user) return null;
   const [stats, monthly] = await Promise.all([
-    getDashboardStats(),
-    getMonthlyRevenue(),
+    getDashboardStats(user),
+    getMonthlyRevenue(user),
   ]);
 
   return (
