@@ -257,6 +257,18 @@ model Customer {
   email       String?
   phone       String?
   address     String?
+  // extended profile (mirrors Lead)
+  altPhone      String?
+  website       String?
+  facebook      String?
+  instagram     String?
+  twitter       String?
+  otherLinks    String?
+  heroProducts  String?
+  inquiryReason String?
+  requirement   String?
+  onboardedAt   DateTime?
+  contractMonths Int?
   // AI-derived
   healthScore Int      @default(50) // 0-100 engagement/health
   lifetimeValue Float  @default(0)

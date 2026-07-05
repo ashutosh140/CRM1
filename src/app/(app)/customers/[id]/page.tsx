@@ -48,7 +48,22 @@ export default async function CustomerDetailPage({
               <Info icon={<Building2 size={15} />} label="Company" value={customer.company ?? "—"} />
               <Info icon={<Mail size={15} />} label="Email" value={customer.email ?? "—"} />
               <Info icon={<Phone size={15} />} label="Phone" value={customer.phone ?? "—"} />
+              {customer.altPhone && <Info icon={<Phone size={15} />} label="Alt. Mobile" value={customer.altPhone} />}
+              {customer.address && <Info icon={<Building2 size={15} />} label="Address" value={customer.address} />}
+              {customer.contractMonths && <Info label="Contract" value={`${customer.contractMonths} months`} />}
             </div>
+            {(customer.website || customer.facebook || customer.instagram || customer.twitter || customer.otherLinks) && (
+              <div className="mt-4 flex flex-wrap gap-2">
+                {customer.website && <LinkChip href={customer.website} label="Website" />}
+                {customer.facebook && <LinkChip href={customer.facebook} label="Facebook" />}
+                {customer.instagram && <LinkChip href={customer.instagram} label="Instagram" />}
+                {customer.twitter && <LinkChip href={customer.twitter} label="Twitter" />}
+                {customer.otherLinks && <span className="badge bg-slate-100 text-slate-600">{customer.otherLinks}</span>}
+              </div>
+            )}
+            {customer.heroProducts && <Block label="Hero Products" text={customer.heroProducts} />}
+            {customer.inquiryReason && <Block label="Reason for Inquiry" text={customer.inquiryReason} />}
+            {customer.requirement && <Block label="Nature of Work / Requirement" text={customer.requirement} />}
           </Card>
 
           <Card>
@@ -149,7 +164,7 @@ export default async function CustomerDetailPage({
   );
 }
 
-function Info({ icon, label, value }: { icon: React.ReactNode; label: string; value: string }) {
+function Info({ icon, label, value }: { icon?: React.ReactNode; label: string; value: string }) {
   return (
     <div>
       <p className="flex items-center gap-1 text-xs text-slate-400">{icon} {label}</p>
@@ -159,6 +174,22 @@ function Info({ icon, label, value }: { icon: React.ReactNode; label: string; va
 }
 function Empty() {
   return <p className="py-4 text-center text-sm text-slate-400">Nothing yet.</p>;
+}
+function Block({ label, text }: { label: string; text: string }) {
+  return (
+    <div className="mt-4 rounded-lg bg-slate-50 p-3 text-sm text-slate-600">
+      <p className="mb-1 text-xs font-medium text-slate-400">{label}</p>
+      {text}
+    </div>
+  );
+}
+function LinkChip({ href, label }: { href: string; label: string }) {
+  const url = href.startsWith("http") ? href : `https://${href}`;
+  return (
+    <a href={url} target="_blank" rel="noreferrer" className="badge border border-brand-200 bg-brand-50 text-brand-700 hover:bg-brand-100">
+      {label}
+    </a>
+  );
 }
 function TwinRow({ label, value }: { label: string; value: string }) {
   return (

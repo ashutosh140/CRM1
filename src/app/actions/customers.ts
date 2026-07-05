@@ -7,6 +7,11 @@ import { getCurrentUser } from "@/lib/auth";
 import { draftEmail } from "@/lib/ai";
 import { sendEmail, emailTemplate } from "@/lib/email";
 
+const s = (fd: FormData, k: string) => {
+  const v = String(fd.get(k) || "").trim();
+  return v || null;
+};
+
 /** Manually add a new customer (a converted lead / active client). */
 export async function createCustomerAction(_prev: unknown, formData: FormData) {
   const name = String(formData.get("name") || "").trim();
@@ -19,11 +24,21 @@ export async function createCustomerAction(_prev: unknown, formData: FormData) {
   const customer = await prisma.customer.create({
     data: {
       name,
-      company: String(formData.get("company") || "") || null,
-      email: String(formData.get("email") || "") || null,
-      phone: String(formData.get("phone") || "") || null,
-      address: String(formData.get("address") || "") || null,
-      healthScore: Math.max(0, Math.min(100, Number(formData.get("healthScore") || 60))),
+      company: s(formData, "company"),
+      email: s(formData, "email"),
+      phone: s(formData, "phone"),
+      address: s(formData, "address"),
+      altPhone: s(formData, "altPhone"),
+      website: s(formData, "website"),
+      facebook: s(formData, "facebook"),
+      instagram: s(formData, "instagram"),
+      twitter: s(formData, "twitter"),
+      otherLinks: s(formData, "otherLinks"),
+      heroProducts: s(formData, "heroProducts"),
+      inquiryReason: s(formData, "inquiryReason"),
+      requirement: s(formData, "requirement"),
+      contractMonths: formData.get("contractMonths") ? Number(formData.get("contractMonths")) : null,
+      onboardedAt: formData.get("onboardedAt") ? new Date(String(formData.get("onboardedAt"))) : null,
       lifetimeValue: Number(formData.get("lifetimeValue") || 0),
       tags,
       ownerId: String(formData.get("ownerId") || "") || me?.id || null,
