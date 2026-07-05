@@ -4,7 +4,7 @@ import {
 } from "lucide-react";
 import { getCurrentUser } from "@/lib/auth";
 import { getDashboardStats, getMonthlyRevenue } from "@/lib/queries";
-import { StatCard, Card, PageHeader, ScoreBar, Badge } from "@/components/ui";
+import { StatCard, Card, PageHeader, Badge } from "@/components/ui";
 import { RevenueChart } from "@/components/RevenueChart";
 import { formatCurrency } from "@/lib/utils";
 
@@ -61,7 +61,6 @@ export default async function DashboardPage() {
                   <th className="pb-2 font-medium">Owner</th>
                   <th className="pb-2 font-medium">Status</th>
                   <th className="pb-2 font-medium">Value</th>
-                  <th className="pb-2 font-medium">AI Score</th>
                 </tr>
               </thead>
               <tbody>
@@ -76,7 +75,6 @@ export default async function DashboardPage() {
                     <td className="py-3 text-slate-600">{lead.owner?.name ?? "Unassigned"}</td>
                     <td className="py-3"><Badge value={lead.status} /></td>
                     <td className="py-3 text-slate-600">{formatCurrency(lead.estimatedValue)}</td>
-                    <td className="py-3"><ScoreBar value={lead.score} /></td>
                   </tr>
                 ))}
               </tbody>

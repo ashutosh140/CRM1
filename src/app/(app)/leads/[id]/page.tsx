@@ -104,7 +104,6 @@ export default async function LeadDetailPage({
               <RescoreButton leadId={lead.id} />
             </div>
             <div className="space-y-3">
-              <Metric label="Lead Score" value={lead.score} />
               <Metric label="Buying Intent" value={lead.intent} />
               <Metric label="Urgency" value={lead.urgency} />
               <Metric label="Closing Probability" value={lead.closingProbability} />

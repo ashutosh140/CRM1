@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Mail } from "lucide-react";
-import { Badge, ScoreBar } from "@/components/ui";
+import { Badge } from "@/components/ui";
 import { EmailComposer } from "@/components/EmailComposer";
 import { formatCurrency, formatDate } from "@/lib/utils";
 
@@ -38,7 +38,6 @@ export function LeadRow({ lead }: { lead: LeadRowData }) {
       <td className="px-4 py-3 text-slate-600">{lead.ownerName ?? "Unassigned"}</td>
       <td className="px-4 py-3"><Badge value={lead.status} /></td>
       <td className="px-4 py-3 text-slate-600">{formatCurrency(lead.estimatedValue)}</td>
-      <td className="px-4 py-3"><ScoreBar value={lead.score} /></td>
       <td className="px-4 py-3 text-xs text-slate-400">{formatDate(lead.createdAt)}</td>
       <td className="px-4 py-3 text-right">
         <button onClick={email} title="Compose email" className="btn-ghost px-2 text-xs">
