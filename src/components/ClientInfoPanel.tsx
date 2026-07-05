@@ -2,7 +2,7 @@
 
 import { useState, useTransition, useEffect, useRef } from "react";
 import { useActionState } from "react";
-import { FileText, LinkIcon, StickyNote, Paperclip, Trash2, Plus, Download } from "lucide-react";
+import { FileText, LinkIcon, StickyNote, Paperclip, Trash2, Plus, Download, ChevronDown } from "lucide-react";
 import { addClientInfoAction, deleteClientInfoAction } from "@/app/actions/clientinfo";
 import { Card } from "@/components/ui";
 import { formatDate } from "@/lib/utils";
@@ -74,43 +74,59 @@ export function ClientInfoPanel({ customerId, items }: { customerId: string; ite
         </div>
       </form>
 
-      {/* Saved items */}
-      <div className="mt-4 space-y-2">
+      {/* Saved items — collapsed by default, click to expand */}
+      <div className="mt-4 space-y-1.5">
         {list.length === 0 && <p className="text-center text-sm text-slate-400">Nothing saved yet.</p>}
         {list.map((it) => (
-          <div key={it.id} className="flex items-start gap-3 rounded-lg border border-slate-100 p-3">
-            <div className="mt-0.5 text-slate-400">
-              {it.kind === "NOTE" ? <StickyNote size={16} /> : it.kind === "LINK" ? <LinkIcon size={16} /> : <FileText size={16} />}
-            </div>
-            <div className="min-w-0 flex-1">
-              {it.title && <p className="text-sm font-medium text-slate-800">{it.title}</p>}
-              {it.kind === "NOTE" && <p className="whitespace-pre-wrap text-sm text-slate-600">{it.body}</p>}
-              {it.kind === "LINK" && it.body && (
-                <a href={it.body} target="_blank" rel="noreferrer" className="break-all text-sm text-brand-600 hover:underline">{it.body}</a>
-              )}
-              {it.kind === "FILE" && (
-                it.fileType?.startsWith("image/") ? (
-                  <a href={`/api/client-info/${it.id}/file`} target="_blank" rel="noreferrer">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={`/api/client-info/${it.id}/file`} alt={it.fileName || "image"} className="mt-1 max-h-40 rounded-lg" />
-                  </a>
-                ) : (
-                  <a href={`/api/client-info/${it.id}/file`} target="_blank" rel="noreferrer"
-                    className="flex items-center gap-1.5 text-sm text-brand-600 hover:underline">
-                    <FileText size={14} /> {it.fileName || "file"} <Download size={13} />
-                  </a>
-                )
-              )}
-              <p className="mt-1 text-[10px] text-slate-400">{formatDate(it.createdAt)}</p>
-            </div>
-            <button
-              onClick={() => start(async () => { await deleteClientInfoAction(it.id, customerId); setList((l) => l.filter((x) => x.id !== it.id)); })}
-              className="text-slate-300 hover:text-rose-500" title="Delete">
-              <Trash2 size={15} />
-            </button>
-          </div>
+          <InfoItem key={it.id} it={it}
+            onDelete={() => start(async () => { await deleteClientInfoAction(it.id, customerId); setList((l) => l.filter((x) => x.id !== it.id)); })} />
         ))}
       </div>
     </Card>
+  );
+}
+
+function InfoItem({ it, onDelete }: { it: Item; onDelete: () => void }) {
+  const [open, setOpen] = useState(false);
+  const icon = it.kind === "NOTE" ? <StickyNote size={15} /> : it.kind === "LINK" ? <LinkIcon size={15} /> : <FileText size={15} />;
+  const preview = it.title || (it.kind === "FILE" ? (it.fileName || "File") : (it.body || "").slice(0, 60)) || it.kind;
+
+  return (
+    <div className="rounded-lg border border-slate-100">
+      {/* collapsed header */}
+      <div className="flex items-center gap-2 p-2.5">
+        <button onClick={() => setOpen((o) => !o)} className="flex min-w-0 flex-1 items-center gap-2 text-left">
+          <span className="text-slate-400">{icon}</span>
+          <span className="truncate text-sm text-slate-700">{preview}</span>
+          <span className="ml-auto shrink-0 text-[10px] text-slate-400">{formatDate(it.createdAt)}</span>
+          <ChevronDown size={15} className={`shrink-0 text-slate-400 transition ${open ? "rotate-180" : ""}`} />
+        </button>
+        <button onClick={onDelete} className="shrink-0 text-slate-300 hover:text-rose-500" title="Delete"><Trash2 size={14} /></button>
+      </div>
+
+      {/* expanded content */}
+      {open && (
+        <div className="border-t border-slate-100 p-3">
+          {it.title && it.kind === "NOTE" && it.body && <p className="whitespace-pre-wrap text-sm text-slate-600">{it.body}</p>}
+          {!it.title && it.kind === "NOTE" && it.body && <p className="whitespace-pre-wrap text-sm text-slate-600">{it.body}</p>}
+          {it.kind === "LINK" && it.body && (
+            <a href={it.body} target="_blank" rel="noreferrer" className="break-all text-sm text-brand-600 hover:underline">{it.body}</a>
+          )}
+          {it.kind === "FILE" && (
+            it.fileType?.startsWith("image/") ? (
+              <a href={`/api/client-info/${it.id}/file`} target="_blank" rel="noreferrer">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={`/api/client-info/${it.id}/file`} alt={it.fileName || "image"} className="max-h-64 rounded-lg" />
+              </a>
+            ) : (
+              <a href={`/api/client-info/${it.id}/file`} target="_blank" rel="noreferrer"
+                className="flex items-center gap-1.5 text-sm text-brand-600 hover:underline">
+                <FileText size={14} /> {it.fileName || "file"} <Download size={13} />
+              </a>
+            )
+          )}
+        </div>
+      )}
+    </div>
   );
 }
