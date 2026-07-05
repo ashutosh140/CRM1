@@ -283,6 +283,34 @@ export async function sendLeadWelcomeEmailAction(leadId: string) {
   return { ok: res.ok, mocked: res.mocked, error: res.ok ? undefined : (res.error || "Send failed") };
 }
 
+/** Convert a (won) lead into a Customer — carries over profile + conversation history. */
+export async function convertLeadToCustomerAction(leadId: string) {
+  const lead = await prisma.lead.findUnique({ where: { id: leadId } });
+  if (!lead) return { error: "Lead not found" };
+  if (lead.customerId) redirect(`/customers/${lead.customerId}`);
+
+  const customer = await prisma.customer.create({
+    data: {
+      name: lead.name,
+      company: lead.company,
+      email: lead.email,
+      phone: lead.phone,
+      ownerId: lead.ownerId,
+      healthScore: 65,
+      lifetimeValue: lead.estimatedValue,
+      tags: lead.heroProducts ? [lead.heroProducts] : [],
+    },
+  });
+
+  // carry the lead's conversation history onto the customer + link them
+  await prisma.activity.updateMany({ where: { leadId }, data: { customerId: customer.id } });
+  await prisma.lead.update({ where: { id: leadId }, data: { customerId: customer.id, status: "WON" } });
+
+  revalidatePath("/customers");
+  revalidatePath(`/leads/${leadId}`);
+  redirect(`/customers/${customer.id}`);
+}
+
 export async function rescoreLeadAction(leadId: string) {
   const lead = await prisma.lead.findUnique({ where: { id: leadId } });
   if (!lead) return;

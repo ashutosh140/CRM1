@@ -3,10 +3,11 @@
 import { useState, useTransition } from "react";
 import { useActionState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import {
-  Mail, Phone, Building2, Globe, Pencil, Trash2, Send, X, Save,
+  Mail, Phone, Building2, Globe, Pencil, Trash2, Send, X, Save, UserPlus, UserCheck,
 } from "lucide-react";
-import { updateLeadAction, deleteLeadAction } from "@/app/actions/leads";
+import { updateLeadAction, deleteLeadAction, convertLeadToCustomerAction } from "@/app/actions/leads";
 import { Card, Badge } from "@/components/ui";
 import { EmailComposer } from "@/components/EmailComposer";
 import { formatCurrency } from "@/lib/utils";
@@ -20,7 +21,7 @@ export interface LeadData {
   website: string | null; facebook: string | null; instagram: string | null; twitter: string | null;
   otherLinks: string | null; heroProducts: string | null; contractMonths: number | null;
   onboardedAt: string | null; inquiryReason: string | null; productRequirement: string | null;
-  stageName: string | null; ownerName: string | null;
+  stageName: string | null; ownerName: string | null; customerId: string | null;
 }
 
 export function LeadEditor({ lead }: { lead: LeadData }) {
@@ -93,6 +94,16 @@ export function LeadEditor({ lead }: { lead: LeadData }) {
   return (
     <Card>
       <div className="mb-4 flex flex-wrap justify-end gap-2">
+        {lead.customerId ? (
+          <Link href={`/customers/${lead.customerId}`} className="btn-ghost text-sm text-emerald-600">
+            <UserCheck size={15} /> View Customer
+          </Link>
+        ) : lead.status === "WON" ? (
+          <button onClick={() => start(async () => { await convertLeadToCustomerAction(lead.id); })} disabled={pending}
+            className="btn-primary text-sm">
+            <UserPlus size={15} /> Convert to Customer
+          </button>
+        ) : null}
         <button onClick={() => setComposing(true)} className="btn-ghost text-sm"><Send size={15} /> Compose Email</button>
         <button onClick={() => setEditing(true)} className="btn-ghost text-sm"><Pencil size={15} /> Edit</button>
         <button onClick={del} disabled={pending} className="btn-ghost text-sm text-rose-600"><Trash2 size={15} /> Delete</button>

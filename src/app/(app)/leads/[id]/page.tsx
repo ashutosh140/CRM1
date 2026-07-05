@@ -62,6 +62,7 @@ export default async function LeadDetailPage({
             onboardedAt: lead.onboardedAt?.toISOString() ?? null, inquiryReason: lead.inquiryReason,
             productRequirement: lead.productRequirement,
             stageName: lead.stage?.name ?? null, ownerName: lead.owner?.name ?? null,
+            customerId: lead.customerId,
           }} />
 
           {/* Activity / conversations */}
