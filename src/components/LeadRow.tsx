@@ -1,10 +1,10 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Mail } from "lucide-react";
-import { sendLeadWelcomeEmailAction } from "@/app/actions/leads";
 import { Badge, ScoreBar } from "@/components/ui";
+import { EmailComposer } from "@/components/EmailComposer";
 import { formatCurrency, formatDate } from "@/lib/utils";
 
 export interface LeadRowData {
@@ -15,17 +15,11 @@ export interface LeadRowData {
 
 export function LeadRow({ lead }: { lead: LeadRowData }) {
   const router = useRouter();
-  const [pending, start] = useTransition();
-  const [sent, setSent] = useState<null | "ok" | "err">(null);
+  const [composing, setComposing] = useState(false);
 
   function email(e: React.MouseEvent) {
     e.stopPropagation();
-    if (!lead.email) { setSent("err"); return; }
-    start(async () => {
-      const r = await sendLeadWelcomeEmailAction(lead.id);
-      setSent(r?.ok ? "ok" : "err");
-      setTimeout(() => setSent(null), 2500);
-    });
+    setComposing(true);
   }
 
   return (
@@ -44,14 +38,10 @@ export function LeadRow({ lead }: { lead: LeadRowData }) {
       <td className="px-4 py-3"><ScoreBar value={lead.score} /></td>
       <td className="px-4 py-3 text-xs text-slate-400">{formatDate(lead.createdAt)}</td>
       <td className="px-4 py-3 text-right">
-        <button
-          onClick={email}
-          disabled={pending}
-          title={lead.email ? "Send welcome email + PDF" : "No email on file"}
-          className={`btn-ghost px-2 text-xs ${sent === "ok" ? "text-emerald-600" : sent === "err" ? "text-rose-600" : ""}`}
-        >
-          <Mail size={14} /> {pending ? "…" : sent === "ok" ? "Sent" : sent === "err" ? "Failed" : "Email"}
+        <button onClick={email} title="Compose email" className="btn-ghost px-2 text-xs">
+          <Mail size={14} /> Email
         </button>
+        {composing && <EmailComposer leadId={lead.id} onClose={() => setComposing(false)} />}
       </td>
     </tr>
   );

@@ -19,18 +19,29 @@ const client = aiEnabled
   ? new OpenAI({ apiKey, timeout: 7000, maxRetries: 0 })
   : null;
 
-/** Low-level helper: ask the model for JSON, with a typed fallback. */
-async function askJSON<T>(
-  system: string,
-  user: string,
-  fallback: T,
+// ── Kimi (Moonshot AI) — OpenAI-compatible. Preferred for email drafts + strategy PDFs. ──
+const kimiKey = process.env.KIMI_API_KEY?.trim();
+const KIMI_MODEL = process.env.KIMI_MODEL?.trim() || "kimi-k2-0711-preview";
+const kimiClient = kimiKey
+  ? new OpenAI({
+      apiKey: kimiKey,
+      baseURL: process.env.KIMI_BASE_URL?.trim() || "https://api.moonshot.ai/v1",
+      timeout: 30000,
+      maxRetries: 0,
+    })
+  : null;
+export const kimiEnabled = Boolean(kimiKey);
+
+/** Core JSON call against a given client/model. */
+async function callJSON<T>(
+  c: OpenAI, model: string,
+  system: string, user: string, fallback: T,
   opts?: { timeout?: number; maxTokens?: number }
 ): Promise<{ data: T; mocked: boolean }> {
-  if (!client) return { data: fallback, mocked: true };
   try {
-    const res = await client.chat.completions.create(
+    const res = await c.chat.completions.create(
       {
-        model: MODEL,
+        model,
         temperature: 0.3,
         response_format: { type: "json_object" },
         max_tokens: opts?.maxTokens,
@@ -44,9 +55,22 @@ async function askJSON<T>(
     const raw = res.choices[0]?.message?.content ?? "{}";
     return { data: { ...fallback, ...JSON.parse(raw) } as T, mocked: false };
   } catch (err) {
-    console.error("[ai] OpenAI call failed, using fallback:", err);
+    console.error("[ai] model call failed, using fallback:", err);
     return { data: fallback, mocked: true };
   }
+}
+
+/** Ask via OpenAI (default). */
+async function askJSON<T>(system: string, user: string, fallback: T, opts?: { timeout?: number; maxTokens?: number }) {
+  if (!client) return { data: fallback, mocked: true };
+  return callJSON(client, MODEL, system, user, fallback, opts);
+}
+
+/** Ask via Kimi when configured, else OpenAI, else heuristic. */
+async function askJSONPreferKimi<T>(system: string, user: string, fallback: T, opts?: { timeout?: number; maxTokens?: number }) {
+  if (kimiClient) return callJSON(kimiClient, KIMI_MODEL, system, user, fallback, opts);
+  if (client) return callJSON(client, MODEL, system, user, fallback, opts);
+  return { data: fallback, mocked: true };
 }
 
 // ───────────────────────── Heuristics (mock brains) ─────────────────────────
@@ -411,6 +435,65 @@ export async function generateClientReport(ctx: {
       `INTERACTIONS:\n${convo}\n\nQUOTATIONS:\n${quotes}\n\nINVOICES:\n${invs}`,
     fallback,
     { timeout: 30000, maxTokens: 1800 }
+  );
+}
+
+export interface LeadEmailDraft {
+  subject: string;
+  body: string;
+}
+
+/** Draft a polite, professional outreach email to a lead (Kimi-preferred). */
+export async function draftLeadEmail(lead: {
+  name: string; company?: string | null; productRequirement?: string | null;
+  inquiryReason?: string | null; heroProducts?: string | null; contractMonths?: number | null;
+}): Promise<{ data: LeadEmailDraft; mocked: boolean }> {
+  const fallback: LeadEmailDraft = {
+    subject: `Great to connect${lead.company ? ` with ${lead.company}` : ""}, ${lead.name}!`,
+    body:
+      `Dear ${lead.name},\n\n` +
+      `Thank you for your interest${lead.productRequirement ? ` in ${lead.productRequirement}` : ""}. ` +
+      `We're excited about the opportunity to work with ${lead.company ?? "you"} and are confident we can deliver real value.\n\n` +
+      `We've attached a document outlining the next steps and our proposed strategy. Please take a look, and feel free to reach out with any questions.\n\n` +
+      `Looking forward to partnering with you.\n\nWarm regards,\nThe AI CRM Team`,
+  };
+  return askJSONPreferKimi<LeadEmailDraft>(
+    `You write warm, professional B2B outreach emails. Return JSON: subject(string), body(string). ` +
+      `Keep it polite, concise, personalised, and confidence-building. Mention that a details/strategy PDF is attached.`,
+    JSON.stringify(lead),
+    fallback,
+    { timeout: 30000, maxTokens: 700 }
+  );
+}
+
+export interface StrategyContent {
+  title: string;
+  sections: { heading: string; body: string }[];
+}
+
+/** Generate a comprehensive next-steps + strategy document (for the PDF). Kimi-preferred. */
+export async function generateStrategyContent(lead: {
+  name: string; company?: string | null; productRequirement?: string | null;
+  inquiryReason?: string | null; heroProducts?: string | null; contractMonths?: number | null;
+  estimatedValue?: number;
+}): Promise<{ data: StrategyContent; mocked: boolean }> {
+  const fallback: StrategyContent = {
+    title: `Engagement Plan & Strategy — ${lead.company ?? lead.name}`,
+    sections: [
+      { heading: "Overview", body: `A tailored plan for ${lead.name}${lead.company ? ` (${lead.company})` : ""}${lead.productRequirement ? `, focused on ${lead.productRequirement}` : ""}.` },
+      { heading: "Upcoming Steps", body: "1. Kick-off call to align on goals and scope.\n2. Discovery & requirement finalisation.\n3. Proposal and timeline sign-off.\n4. Execution with regular check-ins.\n5. Review, reporting and optimisation." },
+      { heading: "Our Strategy", body: "We combine a dedicated account manager, clear milestones, and data-driven reporting to ensure measurable results and a smooth experience throughout the engagement." },
+      { heading: "Timeline & Commitment", body: `${lead.contractMonths ? `Proposed engagement: ${lead.contractMonths} months.` : "Engagement duration to be agreed."} We provide ongoing support and a single point of contact at every stage.` },
+      { heading: "Next Action", body: "We recommend scheduling a kick-off call this week to get started. We're excited to partner with you." },
+    ],
+  };
+  return askJSONPreferKimi<StrategyContent>(
+    `You are a senior strategist. Produce a comprehensive, client-ready plan covering upcoming steps, our strategy, ` +
+      `timeline/commitment and next actions. Return JSON: { "title": string, "sections": [ { "heading": string, "body": string } ] }. ` +
+      `4-6 sections, professional and specific to the client.`,
+    JSON.stringify(lead),
+    fallback,
+    { timeout: 30000, maxTokens: 1500 }
   );
 }
 

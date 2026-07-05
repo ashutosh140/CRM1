@@ -6,7 +6,10 @@ import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/auth";
 import {
   scoreLead, extractLead, analyzeConversation, suggestFollowup,
+  draftLeadEmail, generateStrategyContent,
 } from "@/lib/ai";
+import { generateStrategyPdf } from "@/lib/pdf";
+import { sendEmail, emailTemplate } from "@/lib/email";
 import { runNewLeadWorkflow, sendWelcomeEmail } from "@/lib/workflows";
 import type { LeadSource, LeadStatus, Channel } from "@prisma/client";
 
@@ -209,6 +212,50 @@ export async function deleteLeadAction(leadId: string) {
   await prisma.lead.delete({ where: { id: leadId } });
   revalidatePath("/leads");
   redirect("/leads");
+}
+
+/** Draft an editable email for a lead (Kimi-preferred) — used by the composer. */
+export async function draftLeadEmailAction(leadId: string) {
+  const lead = await prisma.lead.findUnique({ where: { id: leadId } });
+  if (!lead) return { error: "Lead not found" };
+  const { data, mocked } = await draftLeadEmail({
+    name: lead.name, company: lead.company, productRequirement: lead.productRequirement,
+    inquiryReason: lead.inquiryReason, heroProducts: lead.heroProducts, contractMonths: lead.contractMonths,
+  });
+  return { ok: true, mocked, to: lead.email ?? "", subject: data.subject, body: data.body };
+}
+
+/** Send the (edited) email + auto-generated strategy PDF via Brevo. */
+export async function sendLeadEmailAction(leadId: string, to: string, subject: string, body: string) {
+  const lead = await prisma.lead.findUnique({ where: { id: leadId } });
+  if (!lead) return { error: "Lead not found" };
+  if (!to.trim()) return { error: "Recipient email is required." };
+
+  // AI strategy content → PDF attachment
+  const { data: strategy } = await generateStrategyContent({
+    name: lead.name, company: lead.company, productRequirement: lead.productRequirement,
+    inquiryReason: lead.inquiryReason, heroProducts: lead.heroProducts,
+    contractMonths: lead.contractMonths, estimatedValue: lead.estimatedValue,
+  });
+  const pdf = await generateStrategyPdf({
+    clientName: lead.name, company: lead.company, title: strategy.title, sections: strategy.sections,
+  });
+
+  const res = await sendEmail({
+    to: to.trim(), toName: lead.name, subject,
+    html: emailTemplate({ title: subject, body }),
+    attachments: [{ name: "Strategy-and-Next-Steps.pdf", contentBase64: pdf }],
+  });
+
+  await prisma.activity.create({
+    data: {
+      channel: "EMAIL", direction: "OUTBOUND", leadId: lead.id, subject,
+      content: res.mocked ? `[MOCK] Email + strategy PDF to ${to}` : `Email + strategy PDF sent to ${to}`,
+    },
+  });
+  await prisma.lead.update({ where: { id: lead.id }, data: { lastContactedAt: new Date() } }).catch(() => {});
+  revalidatePath(`/leads/${leadId}`);
+  return { ok: res.ok, mocked: res.mocked, error: res.ok ? undefined : (res.error || "Send failed") };
 }
 
 /** Manually (re)send the professional welcome email + onboarding PDF to a lead. */

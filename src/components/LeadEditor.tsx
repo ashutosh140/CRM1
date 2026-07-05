@@ -6,10 +6,9 @@ import { useRouter } from "next/navigation";
 import {
   Mail, Phone, Building2, Globe, Pencil, Trash2, Send, X, Save,
 } from "lucide-react";
-import {
-  updateLeadAction, deleteLeadAction, sendLeadWelcomeEmailAction,
-} from "@/app/actions/leads";
+import { updateLeadAction, deleteLeadAction } from "@/app/actions/leads";
 import { Card, Badge } from "@/components/ui";
+import { EmailComposer } from "@/components/EmailComposer";
 import { formatCurrency } from "@/lib/utils";
 
 const SOURCES = ["MANUAL", "WEBSITE", "WHATSAPP", "EMAIL", "FACEBOOK", "INSTAGRAM", "PHONE", "REFERRAL"];
@@ -26,21 +25,15 @@ export interface LeadData {
 
 export function LeadEditor({ lead }: { lead: LeadData }) {
   const [editing, setEditing] = useState(false);
+  const [composing, setComposing] = useState(false);
   const router = useRouter();
   const [pending, start] = useTransition();
-  const [msg, setMsg] = useState<string | null>(null);
   const [state, formAction, saving] = useActionState(async (p: unknown, fd: FormData) => {
     const r = await updateLeadAction(p, fd);
     if (r?.ok) { setEditing(false); router.refresh(); }
     return r;
   }, null);
 
-  function sendEmail() {
-    start(async () => {
-      const r = await sendLeadWelcomeEmailAction(lead.id);
-      setMsg(r?.ok ? (r.mocked ? "Welcome email queued (mock — set BREVO_API_KEY)" : "Welcome email + PDF sent ✅") : (r?.error || "Failed"));
-    });
-  }
   function del() {
     if (!confirm(`Delete lead "${lead.name}"? This cannot be undone.`)) return;
     start(() => deleteLeadAction(lead.id));
@@ -100,11 +93,11 @@ export function LeadEditor({ lead }: { lead: LeadData }) {
   return (
     <Card>
       <div className="mb-4 flex flex-wrap justify-end gap-2">
-        <button onClick={sendEmail} disabled={pending} className="btn-ghost text-sm"><Send size={15} /> Send Welcome Email</button>
+        <button onClick={() => setComposing(true)} className="btn-ghost text-sm"><Send size={15} /> Compose Email</button>
         <button onClick={() => setEditing(true)} className="btn-ghost text-sm"><Pencil size={15} /> Edit</button>
         <button onClick={del} disabled={pending} className="btn-ghost text-sm text-rose-600"><Trash2 size={15} /> Delete</button>
       </div>
-      {msg && <p className="mb-3 text-sm text-emerald-600">{msg}</p>}
+      {composing && <EmailComposer leadId={lead.id} onClose={() => setComposing(false)} />}
 
       <div className="grid grid-cols-2 gap-4 text-sm sm:grid-cols-4">
         <Info icon={<Building2 size={15} />} label="Company" value={lead.company} />
