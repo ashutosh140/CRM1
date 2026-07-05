@@ -56,7 +56,7 @@ export default async function ReportsPage() {
       <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-3">
         <StatCard label="Forecast — Next Month" value={formatCurrency(forecast)} sub="AI revenue projection" icon={<TrendingUp size={20} />} accent="brand" />
         <StatCard label="Open Pipeline Value" value={formatCurrency(weightedPipeline)} sub="expected sales" icon={<Users size={20} />} accent="amber" />
-        <StatCard label="At-Risk Customers" value={atRisk.length} sub="health < 40" icon={<AlertTriangle size={20} />} accent="rose" />
+        <StatCard label="At-Risk Customers" value={atRisk.length} sub="low engagement" icon={<AlertTriangle size={20} />} accent="rose" />
       </div>
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
@@ -107,7 +107,6 @@ export default async function ReportsPage() {
                   <p className="text-sm font-medium text-slate-800">{c.name}</p>
                   <Badge value="negative" />
                 </div>
-                <div className="mt-2"><ScoreBar value={c.healthScore} /></div>
                 <p className="mt-2 text-xs text-slate-500">AI: send a win-back offer + schedule a personal call.</p>
                 <RecoveryButton customerId={c.id} />
               </div>

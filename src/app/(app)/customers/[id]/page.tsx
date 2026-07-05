@@ -1,9 +1,9 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft, Mail, Phone, Building2, Heart, Brain } from "lucide-react";
+import { ArrowLeft, Mail, Phone, Building2, Brain } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { digitalTwin } from "@/lib/ai";
-import { Card, Badge, ScoreBar, PageHeader } from "@/components/ui";
+import { Card, Badge, PageHeader } from "@/components/ui";
 import { ClientReportPanel } from "@/components/ClientReportPanel";
 import { formatCurrency, formatDate } from "@/lib/utils";
 
@@ -25,7 +25,6 @@ export default async function CustomerDetailPage({
   });
   if (!customer) notFound();
 
-  const risk = customer.healthScore < 40;
 
   const { data: twin } = await digitalTwin({
     name: customer.name,
@@ -89,19 +88,15 @@ export default async function CustomerDetailPage({
 
         <div className="space-y-6">
           <Card>
-            <div className="mb-3 flex items-center gap-2">
-              <Heart size={16} className={risk ? "text-rose-500" : "text-emerald-500"} />
-              <h2 className="font-semibold text-slate-900">Customer Health</h2>
-            </div>
-            <ScoreBar value={customer.healthScore} />
-            <p className={`mt-3 rounded-lg px-3 py-2 text-xs ${risk ? "bg-rose-50 text-rose-700" : "bg-emerald-50 text-emerald-700"}`}>
-              {risk
-                ? "At-risk customer — AI recommends a recovery offer and a personal call."
-                : "Healthy & engaged — good upsell candidate."}
-            </p>
-            <div className="mt-4 text-sm text-slate-500">
+            <h2 className="mb-3 font-semibold text-slate-900">Account Summary</h2>
+            <div className="text-sm text-slate-500">
               <p>Lifetime Value: <b className="text-slate-800">{formatCurrency(customer.lifetimeValue)}</b></p>
               <p className="mt-1">Owner: {customer.owner?.name ?? "Unassigned"}</p>
+              {customer.tags.length > 0 && (
+                <div className="mt-2 flex flex-wrap gap-1">
+                  {customer.tags.map((t) => <span key={t} className="badge bg-slate-100 text-slate-600">{t}</span>)}
+                </div>
+              )}
             </div>
           </Card>
 

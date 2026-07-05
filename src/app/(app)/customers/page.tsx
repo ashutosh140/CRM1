@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { Plus } from "lucide-react";
 import { prisma } from "@/lib/prisma";
-import { PageHeader, ScoreBar, EmptyState } from "@/components/ui";
+import { PageHeader, EmptyState } from "@/components/ui";
 import { formatCurrency, initials } from "@/lib/utils";
 
 export default async function CustomersPage() {
@@ -40,11 +40,7 @@ export default async function CustomersPage() {
                   <p className="truncate text-xs text-slate-400">{c.company ?? c.email ?? "—"}</p>
                 </div>
               </div>
-              <div className="mt-4">
-                <p className="mb-1 text-xs text-slate-400">Health Score</p>
-                <ScoreBar value={c.healthScore} />
-              </div>
-              <div className="mt-3 flex items-center justify-between text-xs text-slate-500">
+              <div className="mt-4 flex items-center justify-between text-xs text-slate-500">
                 <span>LTV: <b className="text-slate-700">{formatCurrency(c.lifetimeValue)}</b></span>
                 <span>{c._count.quotations} quotes · {c._count.invoices} invoices</span>
               </div>
