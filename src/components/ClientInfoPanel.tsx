@@ -5,7 +5,7 @@ import { useActionState } from "react";
 import { FileText, LinkIcon, StickyNote, Paperclip, Trash2, Plus, Download, ChevronDown } from "lucide-react";
 import { addClientInfoAction, deleteClientInfoAction } from "@/app/actions/clientinfo";
 import { Card } from "@/components/ui";
-import { formatDate } from "@/lib/utils";
+import { formatDateTime } from "@/lib/utils";
 
 interface Item {
   id: string; kind: "NOTE" | "LINK" | "FILE"; title: string | null; body: string | null;
@@ -98,7 +98,7 @@ function InfoItem({ it, onDelete }: { it: Item; onDelete: () => void }) {
         <button onClick={() => setOpen((o) => !o)} className="flex min-w-0 flex-1 items-center gap-2 text-left">
           <span className="text-slate-400">{icon}</span>
           <span className="truncate text-sm text-slate-700">{preview}</span>
-          <span className="ml-auto shrink-0 text-[10px] text-slate-400">{formatDate(it.createdAt)}</span>
+          <span className="ml-auto shrink-0 text-[10px] text-slate-400">{formatDateTime(it.createdAt)}</span>
           <ChevronDown size={15} className={`shrink-0 text-slate-400 transition ${open ? "rotate-180" : ""}`} />
         </button>
         <button onClick={onDelete} className="shrink-0 text-slate-300 hover:text-rose-500" title="Delete"><Trash2 size={14} /></button>
