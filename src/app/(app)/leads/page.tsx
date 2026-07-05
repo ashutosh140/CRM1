@@ -4,21 +4,49 @@ import { prisma } from "@/lib/prisma";
 import { PageHeader, EmptyState } from "@/components/ui";
 import { LeadRow } from "@/components/LeadRow";
 import { LeadSearch } from "@/components/LeadSearch";
+import { LeadDateFilter } from "@/components/LeadDateFilter";
 import type { LeadStatus, Prisma } from "@prisma/client";
 
 const STATUSES: (LeadStatus | "ALL")[] = [
   "ALL", "NEW", "CONTACTED", "QUALIFIED", "PROPOSAL", "NEGOTIATION", "WON", "LOST",
 ];
 
+// India (IST) calendar-day boundaries as UTC instants
+const IST = 330 * 60000;
+const dayStartUTC = (ymd: string) => new Date(Date.parse(ymd + "T00:00:00Z") - IST);
+
+function computeDateRange(date?: string, from?: string, to?: string): Prisma.DateTimeFilter | undefined {
+  const istNow = new Date(Date.now() + IST);
+  const ymd = (d: Date) => d.toISOString().slice(0, 10);
+  const todayYmd = ymd(istNow);
+  const yestYmd = ymd(new Date(istNow.getTime() - 86400000));
+
+  if (from || to) {
+    const f: Prisma.DateTimeFilter = {};
+    if (from) f.gte = dayStartUTC(from);
+    if (to) f.lt = new Date(dayStartUTC(to).getTime() + 86400000);
+    return f;
+  }
+  switch (date) {
+    case "today": return { gte: dayStartUTC(todayYmd) };
+    case "yesterday": return { gte: dayStartUTC(yestYmd), lt: dayStartUTC(todayYmd) };
+    case "7d": return { gte: new Date(Date.now() - 7 * 86400000) };
+    case "30d": return { gte: new Date(Date.now() - 30 * 86400000) };
+    default: return undefined;
+  }
+}
+
 export default async function LeadsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ status?: string; q?: string }>;
+  searchParams: Promise<{ status?: string; q?: string; date?: string; from?: string; to?: string }>;
 }) {
-  const { status, q } = await searchParams;
+  const { status, q, date, from, to } = await searchParams;
 
   const where: Prisma.LeadWhereInput = {};
   if (status && status !== "ALL") where.status = status as LeadStatus;
+  const range = computeDateRange(date, from, to);
+  if (range) where.createdAt = range;
   if (q && q.trim()) {
     const term = q.trim();
     where.OR = [
@@ -32,9 +60,9 @@ export default async function LeadsPage({
 
   const leads = await prisma.lead.findMany({
     where,
-    orderBy: [{ score: "desc" }, { createdAt: "desc" }],
+    orderBy: { createdAt: "desc" },
     include: { owner: { select: { name: true } }, stage: { select: { name: true } } },
-    take: 100,
+    take: 200,
   });
 
   return (
@@ -53,18 +81,27 @@ export default async function LeadsPage({
         }
       />
 
-      {/* search */}
-      <div className="mb-4">
+      {/* search + date filter */}
+      <div className="mb-4 space-y-3">
         <LeadSearch />
+        <LeadDateFilter />
+        <p className="text-xs text-slate-400">
+          Showing <b className="text-slate-600">{leads.length}</b> lead{leads.length === 1 ? "" : "s"}
+          {date || from || to ? " for the selected period" : ""}.
+        </p>
       </div>
 
       {/* status filter */}
       <div className="mb-4 flex flex-wrap gap-2">
         {STATUSES.map((s) => {
           const active = (status ?? "ALL") === s;
-          const href = s === "ALL"
-            ? (q ? `/leads?q=${encodeURIComponent(q)}` : "/leads")
-            : `/leads?status=${s}${q ? `&q=${encodeURIComponent(q)}` : ""}`;
+          const sp = new URLSearchParams();
+          if (s !== "ALL") sp.set("status", s);
+          if (q) sp.set("q", q);
+          if (date) sp.set("date", date);
+          if (from) sp.set("from", from);
+          if (to) sp.set("to", to);
+          const href = sp.toString() ? `/leads?${sp.toString()}` : "/leads";
           return (
             <Link
               key={s}
