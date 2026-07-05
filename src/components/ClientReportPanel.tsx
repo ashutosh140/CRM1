@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useTransition } from "react";
-import { Sparkles, FileText, Download, Trash2, ChevronDown, Save, Mail } from "lucide-react";
+import { useState, useTransition, useRef } from "react";
+import { Sparkles, FileText, Download, Trash2, ChevronDown, Save, Mail, Paperclip } from "lucide-react";
 import {
   generateClientReportAction, updateReportAction, deleteReportAction, sendReportEmailAction, reportPdfAction,
 } from "@/app/actions/reports";
@@ -113,6 +113,7 @@ function ReportItem({ report, open, onToggle, onDelete }: {
   const [saved, setSaved] = useState(false);
   const [emailMsg, setEmailMsg] = useState<string | null>(null);
   const [edit, setEdit] = useState(false);
+  const fileRef = useRef<HTMLInputElement>(null);
 
   function save() {
     start(async () => { await updateReportAction(report.id, content, title); setSaved(true); setTimeout(() => setSaved(false), 2000); });
@@ -131,9 +132,16 @@ function ReportItem({ report, open, onToggle, onDelete }: {
   }
   function sendEmail() {
     start(async () => {
-      const r = await sendReportEmailAction(report.id, title, content);
-      setEmailMsg(r?.ok ? (r.mocked ? "Queued (mock — set BREVO_API_KEY)" : "Emailed to client ✅") : (r?.error || "Failed"));
-      setTimeout(() => setEmailMsg(null), 3000);
+      const fd = new FormData();
+      fd.set("reportId", report.id);
+      fd.set("title", title);
+      fd.set("content", content);
+      const files = fileRef.current?.files;
+      if (files) Array.from(files).forEach((f) => fd.append("files", f));
+      const r = await sendReportEmailAction(fd);
+      setEmailMsg(r?.ok ? (r.mocked ? "Queued (mock — set BREVO_API_KEY)" : "Emailed to client ✅ (report PDF + attachments)") : (r?.error || "Failed"));
+      if (r?.ok && fileRef.current) fileRef.current.value = "";
+      setTimeout(() => setEmailMsg(null), 4000);
     });
   }
 
@@ -158,6 +166,10 @@ function ReportItem({ report, open, onToggle, onDelete }: {
               <MarkdownView text={content} />
             </div>
           )}
+          <div className="flex items-center gap-2 rounded-lg bg-slate-50 p-2 text-xs text-slate-500">
+            <Paperclip size={14} /> Attach images / files to the email (optional):
+            <input ref={fileRef} type="file" multiple className="text-xs" />
+          </div>
           <div className="flex flex-wrap items-center justify-end gap-2">
             {saved && <span className="text-xs text-emerald-600">Saved ✅</span>}
             {emailMsg && <span className="text-xs text-emerald-600">{emailMsg}</span>}

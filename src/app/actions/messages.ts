@@ -4,7 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/auth";
 import { notify, notifyMany } from "@/lib/notify";
 
-const MAX_FILE = 20 * 1024 * 1024; // 20 MB
+const MAX_FILE = 10 * 1024 * 1024; // 10 MB
 
 /** Send a message to a user (targetType=user) or a group (targetType=group). */
 export async function sendMessageAction(formData: FormData) {

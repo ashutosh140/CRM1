@@ -73,10 +73,16 @@ function mdToHtml(md: string): string {
   }).join("");
 }
 
-/** Email a (possibly edited) report to the client. */
-export async function sendReportEmailAction(reportId: string, title: string, content: string) {
+const MAX_ATTACH = 10 * 1024 * 1024; // 10 MB per file
+
+/** Email a (possibly edited) report to the client — with the report PDF + any attached files. */
+export async function sendReportEmailAction(formData: FormData) {
   const me = await getCurrentUser();
   if (!me) return { error: "Not authenticated" };
+  const reportId = String(formData.get("reportId") || "");
+  const title = String(formData.get("title") || "");
+  const content = String(formData.get("content") || "");
+
   const report = await prisma.clientReport.findUnique({
     where: { id: reportId }, include: { customer: true },
   });
@@ -86,10 +92,23 @@ export async function sendReportEmailAction(reportId: string, title: string, con
   // persist any edits first
   await prisma.clientReport.update({ where: { id: reportId }, data: { title, content } });
 
+  // build attachments: the report as PDF + any files the user attached
+  const attachments: { name: string; contentBase64: string }[] = [
+    { name: `${(title || "report").replace(/[^\w\s-]/g, "").trim() || "report"}.pdf`, contentBase64: await generateReportPdf(title, content) },
+  ];
+  for (const f of formData.getAll("files")) {
+    if (f && typeof f === "object" && "arrayBuffer" in f && f.size > 0) {
+      if (f.size > MAX_ATTACH) return { error: `"${f.name}" is too large. Maximum 10 MB per file.` };
+      const buf = Buffer.from(await f.arrayBuffer());
+      attachments.push({ name: f.name || "attachment", contentBase64: buf.toString("base64") });
+    }
+  }
+
   const res = await sendEmail({
     to: report.customer.email, toName: report.customer.name,
     subject: title || `Report for ${report.customer.name}`,
     html: emailTemplate({ title: title || "Your Report", body: mdToHtml(content) }),
+    attachments,
   });
 
   // log this send in the report history

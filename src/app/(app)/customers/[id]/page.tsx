@@ -1,10 +1,10 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft, Mail, Phone, Building2, Brain } from "lucide-react";
+import { ArrowLeft, Mail, Phone, Building2 } from "lucide-react";
 import { prisma } from "@/lib/prisma";
-import { digitalTwin } from "@/lib/ai";
 import { Card, Badge, PageHeader } from "@/components/ui";
 import { Tabs } from "@/components/Tabs";
+import { DigitalTwinCard } from "@/components/DigitalTwinCard";
 import { ClientReportPanel } from "@/components/ClientReportPanel";
 import { ClientInfoPanel } from "@/components/ClientInfoPanel";
 import { ReportHistory } from "@/components/ReportHistory";
@@ -34,14 +34,6 @@ export default async function CustomerDetailPage({
     },
   });
   if (!customer) notFound();
-
-  const { data: twin } = await digitalTwin({
-    name: customer.name,
-    company: customer.company,
-    healthScore: customer.healthScore,
-    lifetimeValue: customer.lifetimeValue,
-    recentActivity: customer.activities.map((a) => a.content).slice(0, 5),
-  });
 
   const overview = (
     <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
@@ -121,22 +113,7 @@ export default async function CustomerDetailPage({
     </Card>
   );
 
-  const digitalTwinCard = (
-    <Card>
-      <div className="mb-3 flex items-center gap-2">
-        <Brain size={16} className="text-brand-600" />
-        <h2 className="font-semibold text-slate-900">Digital Twin — Call Prep</h2>
-      </div>
-      <p className="mb-3 text-sm text-slate-600">{twin.summary}</p>
-      <div className="space-y-2 text-sm">
-        <TwinRow label="Best time to call" value={twin.bestTimeToCall} />
-        <TwinRow label="Best offer" value={twin.bestOffer} />
-        <TwinRow label="Recommended tone" value={twin.recommendedTone} />
-        <TwinRow label="Closing probability" value={`${twin.closingProbability}%`} />
-        {twin.topicsToAvoid.length > 0 && <TwinRow label="Topics to avoid" value={twin.topicsToAvoid.join(", ")} />}
-      </div>
-    </Card>
-  );
+  const digitalTwinCard = <DigitalTwinCard customerId={customer.id} />;
 
   const activity = (
     <Card>
@@ -233,13 +210,5 @@ function LinkChip({ href, label }: { href: string; label: string }) {
     <a href={url} target="_blank" rel="noreferrer" className="badge border border-brand-200 bg-brand-50 text-brand-700 hover:bg-brand-100">
       {label}
     </a>
-  );
-}
-function TwinRow({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="flex justify-between gap-3 border-b border-slate-50 pb-1.5 last:border-0">
-      <span className="shrink-0 text-slate-400">{label}</span>
-      <span className="text-right text-slate-700">{value}</span>
-    </div>
   );
 }

@@ -68,7 +68,7 @@ export function TeamChat({
 
   useEffect(() => { bottomRef.current?.scrollIntoView({ behavior: "smooth" }); }, [messages]);
 
-  const MAX_MB = 20;
+  const MAX_MB = 10;
   function handleSend() {
     if (!target || (!text.trim() && !file)) return;
     if (file && file.size > MAX_MB * 1024 * 1024) {
