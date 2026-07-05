@@ -7,7 +7,7 @@ export function Tabs({ tabs }: { tabs: { key: string; label: string; content: Re
 
   return (
     <div>
-      <div className="mb-6 flex flex-wrap gap-1 overflow-x-auto border-b border-slate-200">
+      <div className="mb-6 flex flex-wrap gap-1 border-b border-slate-200">
         {tabs.map((t) => (
           <button
             key={t.key}
