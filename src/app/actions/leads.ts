@@ -55,6 +55,7 @@ async function pickBestSalesUser(): Promise<string | null> {
 }
 
 export async function createLeadAction(_prev: unknown, formData: FormData) {
+  if (!(await getCurrentUser())) return { error: "Not authenticated" };
   const name = String(formData.get("name") || "").trim();
   if (!name) return { error: "Name is required." };
 
@@ -97,6 +98,7 @@ export async function createLeadAction(_prev: unknown, formData: FormData) {
 
 /** "Zero Manual Data Entry" — paste a raw message, AI creates the lead. */
 export async function captureLeadAction(_prev: unknown, formData: FormData) {
+  if (!(await getCurrentUser())) return { error: "Not authenticated" };
   const message = String(formData.get("message") || "").trim();
   const source = (String(formData.get("source") || "WHATSAPP")) as LeadSource;
   if (!message) return { error: "Please paste a message." };
@@ -153,6 +155,7 @@ export async function captureLeadAction(_prev: unknown, formData: FormData) {
 }
 
 export async function updateLeadStatusAction(leadId: string, status: LeadStatus) {
+  if (!(await getCurrentUser())) return;
   await prisma.lead.update({ where: { id: leadId }, data: { status } });
   revalidatePath("/leads");
   revalidatePath("/pipeline");
@@ -160,6 +163,7 @@ export async function updateLeadStatusAction(leadId: string, status: LeadStatus)
 }
 
 export async function moveLeadStageAction(leadId: string, stageId: string) {
+  if (!(await getCurrentUser())) return;
   await prisma.lead.update({ where: { id: leadId }, data: { stageId } });
   revalidatePath("/pipeline");
 }
@@ -193,6 +197,7 @@ export async function addActivityAction(_prev: unknown, formData: FormData) {
 
 /** Edit all core + extended fields of a lead. */
 export async function updateLeadAction(_prev: unknown, formData: FormData) {
+  if (!(await getCurrentUser())) return { error: "Not authenticated" };
   const id = String(formData.get("id") || "");
   const name = String(formData.get("name") || "").trim();
   if (!id || !name) return { error: "Name is required." };
@@ -213,6 +218,8 @@ export async function updateLeadAction(_prev: unknown, formData: FormData) {
 }
 
 export async function deleteLeadAction(leadId: string) {
+  const me = await getCurrentUser();
+  if (!me) redirect("/login");
   await prisma.activity.deleteMany({ where: { leadId } });
   await prisma.task.updateMany({ where: { leadId }, data: { leadId: null } });
   await prisma.aiInsight.deleteMany({ where: { leadId } });
@@ -223,6 +230,7 @@ export async function deleteLeadAction(leadId: string) {
 
 /** Draft an editable email for a lead (OpenAI) — used by the composer. */
 export async function draftLeadEmailAction(leadId: string) {
+  if (!(await getCurrentUser())) return { error: "Not authenticated" };
   const lead = await prisma.lead.findUnique({ where: { id: leadId } });
   if (!lead) return { error: "Lead not found" };
   const { data, mocked } = await draftLeadEmail({
@@ -234,6 +242,7 @@ export async function draftLeadEmailAction(leadId: string) {
 
 /** Send the (edited) email + auto-generated strategy PDF via Brevo. */
 export async function sendLeadEmailAction(leadId: string, to: string, subject: string, body: string) {
+  if (!(await getCurrentUser())) return { error: "Not authenticated" };
   const lead = await prisma.lead.findUnique({ where: { id: leadId } });
   if (!lead) return { error: "Lead not found" };
   if (!to.trim()) return { error: "Recipient email is required." };
@@ -267,6 +276,7 @@ export async function sendLeadEmailAction(leadId: string, to: string, subject: s
 
 /** Manually (re)send the professional welcome email + onboarding PDF to a lead. */
 export async function sendLeadWelcomeEmailAction(leadId: string) {
+  if (!(await getCurrentUser())) return { error: "Not authenticated" };
   const lead = await prisma.lead.findUnique({ where: { id: leadId } });
   if (!lead) return { error: "Lead not found" };
   if (!lead.email) return { error: "This lead has no email address." };
@@ -285,6 +295,7 @@ export async function sendLeadWelcomeEmailAction(leadId: string) {
 
 /** Convert a (won) lead into a Customer — carries over profile + conversation history. */
 export async function convertLeadToCustomerAction(leadId: string) {
+  if (!(await getCurrentUser())) return { error: "Not authenticated" };
   const lead = await prisma.lead.findUnique({ where: { id: leadId } });
   if (!lead) return { error: "Lead not found" };
   if (lead.customerId) redirect(`/customers/${lead.customerId}`);
@@ -312,6 +323,7 @@ export async function convertLeadToCustomerAction(leadId: string) {
 }
 
 export async function rescoreLeadAction(leadId: string) {
+  if (!(await getCurrentUser())) return;
   const lead = await prisma.lead.findUnique({ where: { id: leadId } });
   if (!lead) return;
   const { data: s } = await scoreLead({

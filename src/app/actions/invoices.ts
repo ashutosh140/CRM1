@@ -2,8 +2,12 @@
 
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
+import { getCurrentUser } from "@/lib/auth";
 
 export async function recordPaymentAction(invoiceId: string, amount: number) {
+  const me = await getCurrentUser();
+  if (!me) return;
+  if (!Number.isFinite(amount) || amount < 0) return;
   const inv = await prisma.invoice.findUnique({ where: { id: invoiceId } });
   if (!inv) return;
   const paidAmount = Math.min(inv.total, inv.paidAmount + amount);
@@ -31,6 +35,8 @@ export async function recordPaymentAction(invoiceId: string, amount: number) {
 
 /** Edit an invoice's status, due date, and paid amount. */
 export async function updateInvoiceAction(_prev: unknown, formData: FormData) {
+  const me = await getCurrentUser();
+  if (!me) return { error: "Not authenticated" };
   const id = String(formData.get("id") || "");
   const inv = await prisma.invoice.findUnique({ where: { id } });
   if (!inv) return { error: "Invoice not found" };

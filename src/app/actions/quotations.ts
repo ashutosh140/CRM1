@@ -58,12 +58,14 @@ export async function createQuotationAction(_prev: unknown, formData: FormData) 
 }
 
 export async function setQuotationStatusAction(id: string, status: QuotationStatus) {
+  if (!(await getCurrentUser())) return;
   await prisma.quotation.update({ where: { id }, data: { status } });
   revalidatePath("/quotations");
 }
 
 /** Convert an accepted quotation into an invoice. */
 export async function convertToInvoiceAction(quotationId: string) {
+  if (!(await getCurrentUser())) return;
   const q = await prisma.quotation.findUnique({ where: { id: quotationId } });
   if (!q) return;
   const existing = await prisma.invoice.findUnique({ where: { quotationId } });
@@ -90,6 +92,7 @@ export async function convertToInvoiceAction(quotationId: string) {
 
 /** AI Proposal Generator for a quotation. */
 export async function generateProposalAction(quotationId: string) {
+  if (!(await getCurrentUser())) return { error: "Not authenticated" };
   const q = await prisma.quotation.findUnique({
     where: { id: quotationId },
     include: { customer: true },
@@ -107,6 +110,7 @@ export async function generateProposalAction(quotationId: string) {
 
 /** Dynamic Pricing Recommendation for a quotation. */
 export async function pricingAdviceAction(quotationId: string) {
+  if (!(await getCurrentUser())) return { error: "Not authenticated" };
   const q = await prisma.quotation.findUnique({
     where: { id: quotationId },
     include: { customer: { select: { healthScore: true } } },
@@ -121,6 +125,7 @@ export async function pricingAdviceAction(quotationId: string) {
 
 /** Email the quotation to the customer (via Brevo). */
 export async function emailQuotationAction(quotationId: string) {
+  if (!(await getCurrentUser())) return { error: "Not authenticated" };
   const q = await prisma.quotation.findUnique({
     where: { id: quotationId },
     include: { customer: true },

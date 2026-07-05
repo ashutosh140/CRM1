@@ -47,6 +47,42 @@ export async function destroySession() {
   cookieStore.delete(SESSION_COOKIE);
 }
 
+// ── Password-reset OTP (stored in a short-lived signed cookie, no DB needed) ──
+const RESET_COOKIE = "aicrm_reset";
+
+export async function createResetToken(email: string, otpHash: string) {
+  const token = await new SignJWT({ email, otpHash })
+    .setProtectedHeader({ alg: "HS256" })
+    .setIssuedAt()
+    .setExpirationTime("10m")
+    .sign(secret);
+  const cookieStore = await cookies();
+  cookieStore.set(RESET_COOKIE, token, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "lax",
+    path: "/",
+    maxAge: 600,
+  });
+}
+
+export async function readResetToken(): Promise<{ email: string; otpHash: string } | null> {
+  const cookieStore = await cookies();
+  const token = cookieStore.get(RESET_COOKIE)?.value;
+  if (!token) return null;
+  try {
+    const { payload } = await jwtVerify(token, secret);
+    return { email: payload.email as string, otpHash: payload.otpHash as string };
+  } catch {
+    return null;
+  }
+}
+
+export async function clearResetToken() {
+  const cookieStore = await cookies();
+  cookieStore.delete(RESET_COOKIE);
+}
+
 export async function getSession(): Promise<SessionPayload | null> {
   const cookieStore = await cookies();
   const token = cookieStore.get(SESSION_COOKIE)?.value;
