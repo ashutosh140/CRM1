@@ -87,6 +87,16 @@ export async function generateWelcomePdf(input: WelcomePdfInput): Promise<string
 
 // ── Strategy / next-steps PDF built from AI-generated sections ──
 
+/** Break inline numbered / bulleted lists onto their own lines. */
+function splitLists(text: string): string {
+  return text
+    // "… 1) foo 2) bar" → newline before each "N)"/"N." (not part of ranges like 2-3) or money)
+    .replace(/(?<![\d-])\s+(\d{1,2}[\).]\s)/g, "\n$1")
+    // bullet glyphs
+    .replace(/\s+([•‣▪]\s)/g, "\n$1")
+    .trim();
+}
+
 function wrapText(text: string, font: import("pdf-lib").PDFFont, size: number, maxWidth: number): string[] {
   const out: string[] = [];
   for (const rawLine of text.split("\n")) {
@@ -142,7 +152,7 @@ export async function generateStrategyPdf(input: {
   for (const s of input.sections) {
     ensure(30);
     write(s.heading, 13, bold, BRAND, 20);
-    write(s.body, 11, font, DARK, 16);
+    write(splitLists(s.body), 11, font, DARK, 16);
     y -= 8;
   }
 

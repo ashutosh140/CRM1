@@ -195,6 +195,7 @@ model PipelineStage {
 
 model Lead {
   id                 String     @id @default(cuid())
+  code               String?    @unique // human-friendly unique token e.g. LD-3F9K2A
   name               String
   company            String?
   email              String?

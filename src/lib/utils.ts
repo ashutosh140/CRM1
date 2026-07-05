@@ -21,6 +21,18 @@ export function formatDate(date: Date | string | null | undefined) {
   }).format(new Date(date));
 }
 
+export function formatDateTime(date: Date | string | null | undefined) {
+  if (!date) return "—";
+  return new Intl.DateTimeFormat("en-IN", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: true,
+  }).format(new Date(date));
+}
+
 export function relativeDays(date: Date | string | null | undefined) {
   if (!date) return null;
   const diff = Date.now() - new Date(date).getTime();

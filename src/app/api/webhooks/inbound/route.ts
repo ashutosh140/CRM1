@@ -42,6 +42,7 @@ export async function POST(req: Request) {
     const lead = await prisma.lead.create({
       data: {
         name: extracted.name || "Unknown Lead",
+        code: "LD-" + Math.random().toString(36).slice(2, 8).toUpperCase(),
         company: extracted.company,
         email: extracted.email,
         phone: extracted.phone,

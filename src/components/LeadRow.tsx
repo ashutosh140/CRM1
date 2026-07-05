@@ -8,7 +8,7 @@ import { EmailComposer } from "@/components/EmailComposer";
 import { formatCurrency, formatDate } from "@/lib/utils";
 
 export interface LeadRowData {
-  id: string; name: string; company: string | null; email: string | null; phone: string | null;
+  id: string; code: string | null; name: string; company: string | null; email: string | null; phone: string | null;
   source: string; ownerName: string | null; status: string; estimatedValue: number;
   score: number; createdAt: string;
 }
@@ -28,7 +28,10 @@ export function LeadRow({ lead }: { lead: LeadRowData }) {
       className="cursor-pointer border-t border-slate-100 hover:bg-slate-50/50"
     >
       <td className="px-4 py-3">
-        <p className="font-medium text-slate-800">{lead.name}</p>
+        <div className="flex items-center gap-2">
+          <p className="font-medium text-slate-800">{lead.name}</p>
+          {lead.code && <span className="badge bg-slate-100 font-mono text-[10px] text-slate-500">{lead.code}</span>}
+        </div>
         <p className="text-xs text-slate-400">{lead.company ?? lead.email ?? lead.phone ?? "—"}</p>
       </td>
       <td className="px-4 py-3"><Badge value={lead.source} /></td>

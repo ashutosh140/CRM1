@@ -8,7 +8,7 @@ import { suggestFollowup } from "@/lib/ai";
 import { Card, Badge, ScoreBar, PageHeader } from "@/components/ui";
 import { StatusSelect, ActivityForm, RescoreButton } from "@/components/LeadActions";
 import { LeadEditor } from "@/components/LeadEditor";
-import { formatDate, relativeDays } from "@/lib/utils";
+import { formatDateTime, relativeDays } from "@/lib/utils";
 
 export default async function LeadDetailPage({
   params,
@@ -43,7 +43,7 @@ export default async function LeadDetailPage({
 
       <PageHeader
         title={lead.name}
-        subtitle={lead.company ?? undefined}
+        subtitle={[lead.code, lead.company].filter(Boolean).join(" · ") || undefined}
         action={
           <div className="flex items-center gap-2">
             <StatusSelect leadId={lead.id} current={lead.status} />
@@ -80,7 +80,7 @@ export default async function LeadDetailPage({
                     <div className="min-w-0 flex-1">
                       <p className="text-sm text-slate-700">{a.content}</p>
                       <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-slate-400">
-                        <span>{formatDate(a.createdAt)}</span>
+                        <span>{formatDateTime(a.createdAt)}</span>
                         {a.user && <span>· {a.user.name}</span>}
                         {a.sentiment && <Badge value={a.sentiment} />}
                         {a.intentScore != null && <span>· intent {a.intentScore}%</span>}

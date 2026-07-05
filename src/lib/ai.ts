@@ -439,7 +439,9 @@ export async function draftLeadEmail(lead: {
   };
   return askJSON<LeadEmailDraft>(
     `You write warm, professional B2B outreach emails. Return JSON: subject(string), body(string). ` +
-      `Keep it polite, concise, personalised, and confidence-building. Mention that a details/strategy PDF is attached.`,
+      `Keep it polite, concise, personalised, and confidence-building. Mention that a details/strategy PDF is attached. ` +
+      `IMPORTANT: never use bracketed placeholders like [Your Name], [Your Company], [Your Position] or [Your Contact Information]. ` +
+      `Sign off simply and warmly as "Warm regards,\\nThe AI CRM Team". Do not invent fake names.`,
     JSON.stringify(lead),
     fallback,
     { timeout: 30000, maxTokens: 700 }
@@ -470,7 +472,9 @@ export async function generateStrategyContent(lead: {
   return askJSON<StrategyContent>(
     `You are a senior strategist. Produce a comprehensive, client-ready plan covering upcoming steps, our strategy, ` +
       `timeline/commitment and next actions. Return JSON: { "title": string, "sections": [ { "heading": string, "body": string } ] }. ` +
-      `4-6 sections, professional and specific to the client.`,
+      `4-6 sections, professional and specific to the client. ` +
+      `IMPORTANT formatting: when a section lists multiple steps or points, put EACH item on its OWN line separated by a newline (\\n), ` +
+      `starting with "1. ", "2. " (or "- "). Never run numbered points together in one paragraph.`,
     JSON.stringify(lead),
     fallback,
     { timeout: 30000, maxTokens: 1500 }

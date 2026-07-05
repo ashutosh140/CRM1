@@ -3,7 +3,8 @@ import { Plus, Sparkles } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { PageHeader, EmptyState } from "@/components/ui";
 import { LeadRow } from "@/components/LeadRow";
-import type { LeadStatus } from "@prisma/client";
+import { LeadSearch } from "@/components/LeadSearch";
+import type { LeadStatus, Prisma } from "@prisma/client";
 
 const STATUSES: (LeadStatus | "ALL")[] = [
   "ALL", "NEW", "CONTACTED", "QUALIFIED", "PROPOSAL", "NEGOTIATION", "WON", "LOST",
@@ -12,10 +13,22 @@ const STATUSES: (LeadStatus | "ALL")[] = [
 export default async function LeadsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ status?: string }>;
+  searchParams: Promise<{ status?: string; q?: string }>;
 }) {
-  const { status } = await searchParams;
-  const where = status && status !== "ALL" ? { status: status as LeadStatus } : {};
+  const { status, q } = await searchParams;
+
+  const where: Prisma.LeadWhereInput = {};
+  if (status && status !== "ALL") where.status = status as LeadStatus;
+  if (q && q.trim()) {
+    const term = q.trim();
+    where.OR = [
+      { name: { contains: term, mode: "insensitive" } },
+      { company: { contains: term, mode: "insensitive" } },
+      { email: { contains: term, mode: "insensitive" } },
+      { phone: { contains: term, mode: "insensitive" } },
+      { code: { contains: term, mode: "insensitive" } },
+    ];
+  }
 
   const leads = await prisma.lead.findMany({
     where,
@@ -41,14 +54,22 @@ export default async function LeadsPage({
         }
       />
 
+      {/* search */}
+      <div className="mb-4">
+        <LeadSearch />
+      </div>
+
       {/* status filter */}
       <div className="mb-4 flex flex-wrap gap-2">
         {STATUSES.map((s) => {
           const active = (status ?? "ALL") === s;
+          const href = s === "ALL"
+            ? (q ? `/leads?q=${encodeURIComponent(q)}` : "/leads")
+            : `/leads?status=${s}${q ? `&q=${encodeURIComponent(q)}` : ""}`;
           return (
             <Link
               key={s}
-              href={s === "ALL" ? "/leads" : `/leads?status=${s}`}
+              href={href}
               className={`badge border ${active ? "border-brand-300 bg-brand-50 text-brand-700" : "border-slate-200 bg-white text-slate-600"}`}
             >
               {s.replace(/_/g, " ")}
@@ -78,7 +99,7 @@ export default async function LeadsPage({
               <tbody>
                 {leads.map((lead) => (
                   <LeadRow key={lead.id} lead={{
-                    id: lead.id, name: lead.name, company: lead.company, email: lead.email, phone: lead.phone,
+                    id: lead.id, code: lead.code, name: lead.name, company: lead.company, email: lead.email, phone: lead.phone,
                     source: lead.source, ownerName: lead.owner?.name ?? null, status: lead.status,
                     estimatedValue: lead.estimatedValue, score: lead.score, createdAt: lead.createdAt.toISOString(),
                   }} />

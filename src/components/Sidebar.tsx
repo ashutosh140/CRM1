@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
-  LayoutDashboard, Users, UserCircle, KanbanSquare, CheckSquare,
+  LayoutDashboard, Users, UserCircle, CheckSquare,
   FileText, Receipt, MessageSquare, BarChart3, Sparkles, Settings, Video, UserCog,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -13,7 +13,6 @@ const NAV = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard, min: "EMPLOYEE" },
   { href: "/leads", label: "Leads", icon: Users, min: "SALES" },
   { href: "/customers", label: "Customers", icon: UserCircle, min: "SALES" },
-  { href: "/pipeline", label: "Sales Pipeline", icon: KanbanSquare, min: "SALES" },
   { href: "/tasks", label: "Tasks", icon: CheckSquare, min: "EMPLOYEE" },
   { href: "/quotations", label: "Quotations", icon: FileText, min: "SALES" },
   { href: "/invoices", label: "Invoices", icon: Receipt, min: "SALES" },

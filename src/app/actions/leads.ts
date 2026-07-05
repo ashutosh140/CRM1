@@ -18,6 +18,11 @@ const str = (fd: FormData, k: string) => {
   return v || null;
 };
 
+/** Human-friendly unique lead token, e.g. LD-K3F9A2. */
+function genLeadCode() {
+  return "LD-" + Math.random().toString(36).slice(2, 8).toUpperCase();
+}
+
 /** Extended editable lead fields shared by create & update. */
 function extractLeadFields(fd: FormData) {
   return {
@@ -63,6 +68,7 @@ export async function createLeadAction(_prev: unknown, formData: FormData) {
   const lead = await prisma.lead.create({
     data: {
       name,
+      code: genLeadCode(),
       source,
       estimatedValue,
       ownerId,
@@ -102,6 +108,7 @@ export async function captureLeadAction(_prev: unknown, formData: FormData) {
   const lead = await prisma.lead.create({
     data: {
       name: extracted.name || "Unknown Lead",
+      code: genLeadCode(),
       company: extracted.company,
       email: extracted.email,
       phone: extracted.phone,
