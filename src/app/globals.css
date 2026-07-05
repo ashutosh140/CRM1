@@ -86,3 +86,48 @@ h1, h2, h3, .font-bold, .font-semibold {
     @apply inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium;
   }
 }
+
+/* ── Auth screen animations (mascot + ambient blobs) ── */
+@keyframes floaty {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  50%      { transform: translateY(-14px) rotate(-1.5deg); }
+}
+@keyframes blob {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  33%      { transform: translate(28px, -34px) scale(1.12); }
+  66%      { transform: translate(-22px, 20px) scale(0.92); }
+}
+@keyframes fadeup {
+  from { opacity: 0; transform: translateY(14px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes spin-slow { to { transform: rotate(360deg); } }
+@keyframes pulse-ring {
+  0%   { transform: scale(0.85); opacity: 0.55; }
+  70%  { transform: scale(1.25); opacity: 0; }
+  100% { transform: scale(1.25); opacity: 0; }
+}
+@keyframes blink {
+  0%, 92%, 100% { transform: scaleY(1); }
+  96%           { transform: scaleY(0.1); }
+}
+@keyframes shimmer {
+  0%   { background-position: -200% center; }
+  100% { background-position: 200% center; }
+}
+.animate-floaty   { animation: floaty 6s ease-in-out infinite; }
+.animate-blob     { animation: blob 16s ease-in-out infinite; }
+.animate-fadeup   { animation: fadeup 0.7s ease-out both; }
+.animate-spin-slow{ animation: spin-slow 18s linear infinite; }
+.animate-ring     { animation: pulse-ring 3.2s ease-out infinite; }
+.animate-blink    { transform-origin: center; animation: blink 5s ease-in-out infinite; }
+.text-shimmer {
+  background: linear-gradient(90deg, #e9d5ff 0%, #ffffff 50%, #e9d5ff 100%);
+  background-size: 200% auto;
+  -webkit-background-clip: text; background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: shimmer 6s linear infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .animate-floaty, .animate-blob, .animate-spin-slow, .animate-ring, .animate-blink, .text-shimmer { animation: none; }
+}
