@@ -1,7 +1,8 @@
 import { prisma } from "@/lib/prisma";
 import { PageHeader, StatCard, EmptyState } from "@/components/ui";
 import { InvoiceRow } from "@/components/InvoiceRow";
-import { formatCurrency } from "@/lib/utils";
+import { ExportInvoicesButton } from "@/components/ExportInvoicesButton";
+import { formatCurrency, formatDate } from "@/lib/utils";
 import { Wallet, Clock, CheckCircle2 } from "lucide-react";
 
 export default async function InvoicesPage() {
@@ -17,9 +18,19 @@ export default async function InvoicesPage() {
     (i) => i.dueDate && i.dueDate < new Date() && i.paidAmount < i.total
   ).length;
 
+  const exportRows = invoices.map((i) => ({
+    number: i.number, customer: i.customer.name, status: i.status,
+    total: i.total, paid: i.paidAmount, due: i.total - i.paidAmount,
+    dueDate: i.dueDate ? formatDate(i.dueDate) : "—",
+  }));
+
   return (
     <div>
-      <PageHeader title="Invoices & Payments" subtitle="Track billing, payments and overdue reminders." />
+      <PageHeader
+        title="Invoices & Payments"
+        subtitle="Track billing, payments and overdue reminders."
+        action={<ExportInvoicesButton rows={exportRows} />}
+      />
 
       <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-3">
         <StatCard label="Collected" value={formatCurrency(collected)} icon={<CheckCircle2 size={20} />} accent="green" />

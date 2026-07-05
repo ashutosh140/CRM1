@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/auth";
+import { notify } from "@/lib/notify";
 import type { TaskPriority } from "@prisma/client";
 
 function genTaskCode() {
@@ -16,18 +17,22 @@ export async function createTaskAction(_prev: unknown, formData: FormData) {
   const me = await getCurrentUser();
   if (!me) return { error: "Not authenticated" };
 
-  await prisma.task.create({
+  const assigneeId = String(formData.get("assigneeId") || "") || me.id;
+  const task = await prisma.task.create({
     data: {
       code: genTaskCode(),
       title,
       description: String(formData.get("description") || "") || null,
       priority: (String(formData.get("priority") || "MEDIUM")) as TaskPriority,
-      assigneeId: String(formData.get("assigneeId") || "") || me.id,
+      assigneeId,
       creatorId: me.id,
       status: "ASSIGNED",
       dueDate: formData.get("dueDate") ? new Date(String(formData.get("dueDate"))) : null,
     },
   });
+  if (assigneeId !== me.id) {
+    await notify(assigneeId, `New task from ${me.name}`, title, `/tasks/${task.id}`);
+  }
   revalidatePath("/tasks");
   return { ok: true };
 }
@@ -74,6 +79,7 @@ export async function submitCompletionAction(_prev: unknown, formData: FormData)
     prisma.taskMessage.create({ data: { taskId, senderId: me.id, body: note, kind: "COMPLETION" } }),
     prisma.task.update({ where: { id: taskId }, data: { status: "COMPLETED" } }),
   ]);
+  await notify(task.creatorId, `Task completed: ${task.title}`, `${me.name} submitted their work for review`, `/tasks/${taskId}`);
   revalidatePath("/tasks");
   revalidatePath(`/tasks/${taskId}`);
   return { ok: true };
@@ -90,6 +96,7 @@ export async function verifyDoneAction(taskId: string) {
     prisma.taskMessage.create({ data: { taskId, senderId: me.id, body: "Verified & marked as done. Great work! ✅", kind: "VERIFIED" } }),
     prisma.task.update({ where: { id: taskId }, data: { status: "DONE" } }),
   ]);
+  await notify(task.assigneeId, `Task marked done: ${task.title}`, `${me.name} verified your work ✅`, `/tasks/${taskId}`);
   revalidatePath("/tasks");
   revalidatePath(`/tasks/${taskId}`);
   return { ok: true };
@@ -117,6 +124,7 @@ export async function reassignAction(_prev: unknown, formData: FormData) {
       },
     }),
   ]);
+  await notify(newAssigneeId || task.assigneeId, `Task reassigned: ${task.title}`, instructions, `/tasks/${taskId}`);
   revalidatePath("/tasks");
   revalidatePath(`/tasks/${taskId}`);
   return { ok: true };

@@ -113,6 +113,50 @@ function wrapText(text: string, font: import("pdf-lib").PDFFont, size: number, m
   return out;
 }
 
+/** Render a markdown-ish report into a clean PDF (no #, *, / symbols). */
+export async function generateReportPdf(title: string, content: string): Promise<string> {
+  const pdf = await PDFDocument.create();
+  const font = await pdf.embedFont(StandardFonts.Helvetica);
+  const bold = await pdf.embedFont(StandardFonts.HelveticaBold);
+  const margin = 40;
+  const pageW = 595, pageH = 842, contentW = pageW - margin * 2;
+  let page = pdf.addPage([pageW, pageH]);
+  let y = pageH - 50;
+
+  page.drawRectangle({ x: 0, y: pageH - 50, width: pageW, height: 50, color: BRAND });
+  page.drawText("AI CRM", { x: margin, y: pageH - 32, size: 20, font: bold, color: rgb(1, 1, 1) });
+  page.drawText("Client Report", { x: margin, y: pageH - 45, size: 9, font, color: rgb(0.9, 0.9, 1) });
+  y = pageH - 88;
+
+  const ensure = (needed: number) => { if (y - needed < 50) { page = pdf.addPage([pageW, pageH]); y = pageH - 55; } };
+  const strip = (s: string) => s.replace(/\*\*(.+?)\*\*/g, "$1").replace(/[*_`]/g, "").trim();
+
+  const draw = (text: string, size: number, f: typeof font, color: typeof DARK, gap: number, indent = 0) => {
+    for (const l of wrapText(text, f, size, contentW - indent)) {
+      ensure(gap);
+      if (l) page.drawText(l, { x: margin + indent, y, size, font: f, color });
+      y -= gap;
+    }
+  };
+
+  draw(strip(title), 17, bold, DARK, 24);
+  y -= 4;
+
+  for (const raw of content.split("\n")) {
+    const t = raw.trim();
+    if (t === "") { y -= 8; continue; }
+    if (t.startsWith("### ")) { y -= 2; draw(strip(t.slice(4)), 12, bold, BRAND, 18); }
+    else if (t.startsWith("## ")) { y -= 4; draw(strip(t.slice(3)), 13, bold, BRAND, 20); }
+    else if (t.startsWith("# ")) { y -= 4; draw(strip(t.slice(2)), 15, bold, DARK, 22); }
+    else if (/^[-*]\s+/.test(t)) draw("•  " + strip(t.replace(/^[-*]\s+/, "")), 11, font, DARK, 16, 8);
+    else if (/^\d+[.)]\s+/.test(t)) draw(strip(t), 11, font, DARK, 16, 8);
+    else draw(strip(t), 11, font, DARK, 16);
+  }
+
+  const bytes = await pdf.save();
+  return Buffer.from(bytes).toString("base64");
+}
+
 export async function generateStrategyPdf(input: {
   clientName: string;
   company?: string | null;

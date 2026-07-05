@@ -4,8 +4,15 @@ import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/auth";
 import { generateClientReport } from "@/lib/ai";
+import { generateReportPdf } from "@/lib/pdf";
 import { sendEmail, emailTemplate } from "@/lib/email";
 import { formatDate } from "@/lib/utils";
+
+/** Generate a clean PDF (base64) from the current report title + content. */
+export async function reportPdfAction(title: string, content: string) {
+  const base64 = await generateReportPdf(title || "Client Report", content || "");
+  return { base64 };
+}
 
 /** Generate an AI report for a client based on a custom instruction. */
 export async function generateClientReportAction(customerId: string, instruction: string) {

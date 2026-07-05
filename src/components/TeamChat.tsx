@@ -68,8 +68,13 @@ export function TeamChat({
 
   useEffect(() => { bottomRef.current?.scrollIntoView({ behavior: "smooth" }); }, [messages]);
 
+  const MAX_MB = 20;
   function handleSend() {
     if (!target || (!text.trim() && !file)) return;
+    if (file && file.size > MAX_MB * 1024 * 1024) {
+      alert(`File is too large. The maximum allowed size is ${MAX_MB} MB.`);
+      return;
+    }
     const fd = new FormData();
     fd.set("targetType", target.type);
     fd.set("targetId", target.id);
@@ -163,7 +168,7 @@ export function TeamChat({
                       {m.body && <p className="whitespace-pre-wrap break-words">{m.body}</p>}
                       {m.hasFile && <FileAttachment id={m.id} name={m.fileName} type={m.fileType} mine={mine} />}
                       <p className={`mt-1 text-[10px] ${mine ? "text-brand-100" : "text-slate-400"}`}>
-                        {new Date(m.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                        {new Date(m.createdAt).toLocaleString("en-IN", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit", hour12: true })}
                       </p>
                     </div>
                   </div>

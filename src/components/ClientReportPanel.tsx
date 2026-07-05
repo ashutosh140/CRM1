@@ -3,7 +3,7 @@
 import { useState, useTransition } from "react";
 import { Sparkles, FileText, Download, Trash2, ChevronDown, Save, Mail } from "lucide-react";
 import {
-  generateClientReportAction, updateReportAction, deleteReportAction, sendReportEmailAction,
+  generateClientReportAction, updateReportAction, deleteReportAction, sendReportEmailAction, reportPdfAction,
 } from "@/app/actions/reports";
 import { Card } from "@/components/ui";
 import { formatDate } from "@/lib/utils";
@@ -84,6 +84,26 @@ export function ClientReportPanel({
   );
 }
 
+/** Render markdown-ish report text as clean formatted elements (no #, *, /). */
+function MarkdownView({ text }: { text: string }) {
+  const strip = (s: string) => s.replace(/\*\*(.+?)\*\*/g, "$1").replace(/[*_`]/g, "");
+  const lines = text.split("\n");
+  return (
+    <div className="space-y-1.5 text-sm text-slate-700">
+      {lines.map((raw, i) => {
+        const t = raw.trim();
+        if (t === "") return <div key={i} className="h-2" />;
+        if (t.startsWith("### ")) return <h4 key={i} className="pt-1 text-sm font-semibold text-brand-700">{strip(t.slice(4))}</h4>;
+        if (t.startsWith("## ")) return <h3 key={i} className="pt-2 text-base font-semibold text-brand-700">{strip(t.slice(3))}</h3>;
+        if (t.startsWith("# ")) return <h2 key={i} className="pt-2 text-lg font-bold text-slate-900">{strip(t.slice(2))}</h2>;
+        if (/^[-*]\s+/.test(t)) return <div key={i} className="flex gap-2 pl-1"><span className="text-brand-500">•</span><span>{strip(t.replace(/^[-*]\s+/, ""))}</span></div>;
+        if (/^\d+[.)]\s+/.test(t)) return <div key={i} className="pl-1">{strip(t)}</div>;
+        return <p key={i}>{strip(t)}</p>;
+      })}
+    </div>
+  );
+}
+
 function ReportItem({ report, open, onToggle, onDelete }: {
   report: Report; open: boolean; onToggle: () => void; onDelete: () => void;
 }) {
@@ -92,16 +112,22 @@ function ReportItem({ report, open, onToggle, onDelete }: {
   const [pending, start] = useTransition();
   const [saved, setSaved] = useState(false);
   const [emailMsg, setEmailMsg] = useState<string | null>(null);
+  const [edit, setEdit] = useState(false);
 
   function save() {
     start(async () => { await updateReportAction(report.id, content, title); setSaved(true); setTimeout(() => setSaved(false), 2000); });
   }
   function download() {
-    const blob = new Blob([content], { type: "text/markdown" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url; a.download = `${title.replace(/[^\w\s-]/g, "").trim() || "report"}.md`;
-    a.click(); URL.revokeObjectURL(url);
+    start(async () => {
+      const r = await reportPdfAction(title, content);
+      if (!r?.base64) return;
+      const bytes = Uint8Array.from(atob(r.base64), (c) => c.charCodeAt(0));
+      const blob = new Blob([bytes], { type: "application/pdf" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url; a.download = `${title.replace(/[^\w\s-]/g, "").trim() || "report"}.pdf`;
+      a.click(); URL.revokeObjectURL(url);
+    });
   }
   function sendEmail() {
     start(async () => {
@@ -121,16 +147,25 @@ function ReportItem({ report, open, onToggle, onDelete }: {
       </button>
       {open && (
         <div className="space-y-3 border-t border-slate-100 p-3">
-          <input value={title} onChange={(e) => setTitle(e.target.value)} className="input font-medium" />
-          <textarea value={content} onChange={(e) => setContent(e.target.value)} rows={16}
-            className="input font-mono text-xs leading-relaxed" />
+          {edit ? (
+            <>
+              <input value={title} onChange={(e) => setTitle(e.target.value)} className="input font-medium" />
+              <textarea value={content} onChange={(e) => setContent(e.target.value)} rows={16}
+                className="input font-mono text-xs leading-relaxed" />
+            </>
+          ) : (
+            <div className="max-h-96 overflow-y-auto rounded-lg bg-slate-50 p-4">
+              <MarkdownView text={content} />
+            </div>
+          )}
           <div className="flex flex-wrap items-center justify-end gap-2">
             {saved && <span className="text-xs text-emerald-600">Saved ✅</span>}
             {emailMsg && <span className="text-xs text-emerald-600">{emailMsg}</span>}
             <button onClick={onDelete} className="btn-ghost text-xs text-rose-600"><Trash2 size={14} /> Delete</button>
-            <button onClick={download} className="btn-ghost text-xs"><Download size={14} /> Download</button>
+            <button onClick={() => setEdit((e) => !e)} className="btn-ghost text-xs">{edit ? "Preview" : "Edit"}</button>
+            <button onClick={download} disabled={pending} className="btn-ghost text-xs"><Download size={14} /> Download PDF</button>
             <button onClick={sendEmail} disabled={pending} className="btn-ghost text-xs"><Mail size={14} /> Send to Client</button>
-            <button onClick={save} disabled={pending} className="btn-primary text-xs"><Save size={14} /> {pending ? "Saving…" : "Save"}</button>
+            <button onClick={() => { save(); setEdit(false); }} disabled={pending} className="btn-primary text-xs"><Save size={14} /> {pending ? "Saving…" : "Save"}</button>
           </div>
         </div>
       )}

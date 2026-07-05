@@ -2,8 +2,9 @@
 
 import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/auth";
+import { notify, notifyMany } from "@/lib/notify";
 
-const MAX_FILE = 5 * 1024 * 1024; // 5 MB
+const MAX_FILE = 20 * 1024 * 1024; // 20 MB
 
 /** Send a message to a user (targetType=user) or a group (targetType=group). */
 export async function sendMessageAction(formData: FormData) {
@@ -21,7 +22,7 @@ export async function sendMessageAction(formData: FormData) {
 
   const file = formData.get("file");
   if (file && typeof file === "object" && "arrayBuffer" in file && file.size > 0) {
-    if (file.size > MAX_FILE) return { error: "File too large (max 5 MB)." };
+    if (file.size > MAX_FILE) return { error: "File is too large. The maximum allowed size is 20 MB." };
     const buf = Buffer.from(await file.arrayBuffer());
     fileType = file.type || "application/octet-stream";
     fileName = file.name || "file";
@@ -30,6 +31,7 @@ export async function sendMessageAction(formData: FormData) {
 
   if (!body && !fileData) return { error: "Message is empty." };
 
+  const preview = body ? body.slice(0, 80) : "Sent a file 📎";
   if (targetType === "group") {
     const member = await prisma.groupMember.findUnique({
       where: { groupId_userId: { groupId: targetId, userId: me.id } },
@@ -38,10 +40,19 @@ export async function sendMessageAction(formData: FormData) {
     await prisma.message.create({
       data: { senderId: me.id, groupId: targetId, body: body || null, fileName, fileType, fileData },
     });
+    const group = await prisma.group.findUnique({
+      where: { id: targetId },
+      include: { members: { select: { userId: true } } },
+    });
+    await notifyMany(
+      (group?.members ?? []).map((m) => m.userId).filter((uid) => uid !== me.id),
+      `${me.name} in ${group?.name ?? "a group"}`, preview, "/communication"
+    );
   } else {
     await prisma.message.create({
       data: { senderId: me.id, recipientId: targetId, body: body || null, fileName, fileType, fileData },
     });
+    await notify(targetId, `New message from ${me.name}`, preview, "/communication");
   }
   return { ok: true };
 }

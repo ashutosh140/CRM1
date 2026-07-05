@@ -1,6 +1,7 @@
 "use client";
 
 import { useTransition } from "react";
+import { useRouter } from "next/navigation";
 import { IndianRupee } from "lucide-react";
 import { recordPaymentAction } from "@/app/actions/invoices";
 import { Badge } from "@/components/ui";
@@ -12,10 +13,12 @@ export function InvoiceRow({ inv }: {
     dueDate: Date | null; customer: { name: string };
   };
 }) {
+  const router = useRouter();
   const [pending, start] = useTransition();
   const due = inv.total - inv.paidAmount;
   return (
-    <tr className="border-t border-slate-100">
+    <tr onClick={() => router.push(`/invoices/${inv.id}`)}
+      className="cursor-pointer border-t border-slate-100 hover:bg-slate-50/50">
       <td className="px-4 py-3 font-medium text-slate-800">{inv.number}</td>
       <td className="px-4 py-3 text-slate-600">{inv.customer.name}</td>
       <td className="px-4 py-3"><Badge value={inv.status} /></td>
@@ -25,7 +28,7 @@ export function InvoiceRow({ inv }: {
       <td className="px-4 py-3 text-right">
         {due > 0 && (
           <button className="btn-ghost text-xs" disabled={pending}
-            onClick={() => start(() => recordPaymentAction(inv.id, due))}>
+            onClick={(e) => { e.stopPropagation(); start(() => recordPaymentAction(inv.id, due)); }}>
             <IndianRupee size={13} /> Mark Paid
           </button>
         )}

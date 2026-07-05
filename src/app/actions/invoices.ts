@@ -26,4 +26,24 @@ export async function recordPaymentAction(invoiceId: string, amount: number) {
   }
 
   revalidatePath("/invoices");
+  revalidatePath(`/invoices/${invoiceId}`);
+}
+
+/** Edit an invoice's status, due date, and paid amount. */
+export async function updateInvoiceAction(_prev: unknown, formData: FormData) {
+  const id = String(formData.get("id") || "");
+  const inv = await prisma.invoice.findUnique({ where: { id } });
+  if (!inv) return { error: "Invoice not found" };
+
+  const status = String(formData.get("status") || inv.status) as typeof inv.status;
+  const dueDate = formData.get("dueDate") ? new Date(String(formData.get("dueDate"))) : null;
+  const paidAmount = Math.max(0, Math.min(inv.total, Number(formData.get("paidAmount") || inv.paidAmount)));
+
+  await prisma.invoice.update({
+    where: { id },
+    data: { status, dueDate, paidAmount },
+  });
+  revalidatePath("/invoices");
+  revalidatePath(`/invoices/${id}`);
+  return { ok: true };
 }
