@@ -16,7 +16,7 @@ export async function getDashboardStats() {
     prisma.lead.count({ where: { status: "LOST" } }),
     prisma.lead.count({ where: { status: { notIn: ["WON", "LOST"] } } }),
     prisma.customer.count(),
-    prisma.task.count({ where: { status: { in: ["TODO", "IN_PROGRESS"] } } }),
+    prisma.task.count({ where: { status: { not: "DONE" } } }),
     prisma.invoice.findMany({ select: { total: true, paidAmount: true, status: true } }),
     prisma.lead.findMany({
       where: { status: { notIn: ["WON", "LOST"] } },

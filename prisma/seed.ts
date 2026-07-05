@@ -177,13 +177,14 @@ async function main() {
     },
   });
 
-  // ── Tasks ──
+  // ── Tasks (ticket workflow) ──
+  const tk = () => "TK-" + Math.random().toString(36).slice(2, 8).toUpperCase();
   await prisma.task.createMany({
     data: [
-      { title: "Call Vikram Joshi for demo", priority: "HIGH", assigneeId: sales1.id, creatorId: manager.id, status: "TODO" },
-      { title: "Send proposal to Coastal Logistics", priority: "URGENT", assigneeId: sales2.id, creatorId: manager.id, status: "IN_PROGRESS" },
-      { title: "Win-back offer for Nimbus Tech", priority: "MEDIUM", assigneeId: sales1.id, creatorId: admin.id, status: "TODO" },
-      { title: "Onboard Skyline Builders", priority: "HIGH", assigneeId: manager.id, creatorId: admin.id, status: "DONE" },
+      { code: tk(), title: "Call Vikram Joshi for demo", priority: "HIGH", assigneeId: sales1.id, creatorId: manager.id, status: "ASSIGNED" },
+      { code: tk(), title: "Send proposal to Coastal Logistics", priority: "URGENT", assigneeId: sales2.id, creatorId: manager.id, status: "SEEN", seenAt: new Date() },
+      { code: tk(), title: "Win-back offer for Nimbus Tech", priority: "MEDIUM", assigneeId: sales1.id, creatorId: admin.id, status: "COMPLETED", seenAt: new Date() },
+      { code: tk(), title: "Onboard Skyline Builders", priority: "HIGH", assigneeId: manager.id, creatorId: admin.id, status: "DONE", seenAt: new Date() },
     ],
   });
 

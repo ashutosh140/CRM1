@@ -41,10 +41,17 @@ enum LeadStatus {
 }
 
 enum TaskStatus {
-  TODO
-  IN_PROGRESS
-  DONE
-  CANCELLED
+  ASSIGNED    // sent to assignee, not yet seen
+  SEEN        // assignee has viewed it
+  COMPLETED   // assignee submitted completion, awaiting verification
+  DONE        // assigner verified & closed
+}
+
+enum TaskMsgKind {
+  MESSAGE     // a note in the thread
+  COMPLETION  // assignee's "I've completed this" note
+  REASSIGN    // assigner reopened / reassigned with instructions
+  VERIFIED    // assigner marked done
 }
 
 enum TaskPriority {
@@ -119,6 +126,7 @@ model User {
   createdGroups    Group[]       @relation("GroupCreator")
   groupMemberships GroupMember[]
   clientReports    ClientReport[]
+  taskMessages     TaskMessage[]
 }
 
 // AI-generated client report (editable + downloadable)
@@ -272,11 +280,13 @@ model Customer {
 
 model Task {
   id          String       @id @default(cuid())
+  code        String?      @unique // ticket token e.g. TK-4F9K2A
   title       String
   description String?
-  status      TaskStatus   @default(TODO)
+  status      TaskStatus   @default(ASSIGNED)
   priority    TaskPriority @default(MEDIUM)
   dueDate     DateTime?
+  seenAt      DateTime?    // when the assignee first opened it
 
   assigneeId String?
   assignee   User?   @relation("TaskAssignee", fields: [assigneeId], references: [id])
@@ -285,11 +295,27 @@ model Task {
   leadId     String?
   lead       Lead?   @relation(fields: [leadId], references: [id])
 
+  messages TaskMessage[]
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   @@index([assigneeId])
+  @@index([creatorId])
   @@index([status])
+}
+
+model TaskMessage {
+  id        String      @id @default(cuid())
+  taskId    String
+  task      Task        @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  senderId  String?
+  sender    User?       @relation(fields: [senderId], references: [id])
+  body      String
+  kind      TaskMsgKind @default(MESSAGE)
+  createdAt DateTime    @default(now())
+
+  @@index([taskId, createdAt])
 }
 
 model Quotation {

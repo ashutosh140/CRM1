@@ -41,7 +41,6 @@ export default async function LeadsPage({
     <div>
       <PageHeader
         title="Lead Management"
-        subtitle="Auto-captured leads from WhatsApp, Email, Web & Social — scored by AI."
         action={
           <div className="flex gap-2">
             <Link href="/leads/capture" className="btn-ghost">
