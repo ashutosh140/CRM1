@@ -8,15 +8,15 @@ export default function LoginPage() {
   const [state, formAction, pending] = useActionState(loginAction, null);
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-brand-50 via-white to-slate-100 p-4">
+    <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-brand-50 via-white to-slate-100 p-4 dark:from-slate-950 dark:via-slate-900 dark:to-slate-900">
       <div className="w-full max-w-md">
         <div className="mb-6 flex items-center justify-center gap-2">
           <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-brand-600 text-white">
             <Sparkles size={22} />
           </div>
           <div>
-            <h1 className="text-xl font-bold text-slate-900">AI CRM</h1>
-            <p className="text-xs text-slate-500">Business Operating System</p>
+            <h1 className="text-xl font-bold text-slate-900 dark:text-white">AI CRM</h1>
+            <p className="text-xs text-slate-500 dark:text-slate-400">Business Operating System</p>
           </div>
         </div>
 
