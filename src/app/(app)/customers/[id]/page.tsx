@@ -4,10 +4,11 @@ import { ArrowLeft, Mail, Phone, Building2, Brain } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { digitalTwin } from "@/lib/ai";
 import { Card, Badge, PageHeader } from "@/components/ui";
+import { Tabs } from "@/components/Tabs";
 import { ClientReportPanel } from "@/components/ClientReportPanel";
 import { ClientInfoPanel } from "@/components/ClientInfoPanel";
 import { ReportHistory } from "@/components/ReportHistory";
-import { formatCurrency, formatDate } from "@/lib/utils";
+import { formatCurrency, formatDateTime } from "@/lib/utils";
 
 export default async function CustomerDetailPage({
   params,
@@ -21,7 +22,7 @@ export default async function CustomerDetailPage({
       owner: { select: { name: true } },
       quotations: { orderBy: { createdAt: "desc" }, take: 10 },
       invoices: { orderBy: { createdAt: "desc" }, take: 10 },
-      activities: { orderBy: { createdAt: "desc" }, take: 10 },
+      activities: { orderBy: { createdAt: "desc" }, take: 20 },
       reports: {
         orderBy: { createdAt: "desc" }, take: 50,
         include: {
@@ -34,7 +35,6 @@ export default async function CustomerDetailPage({
   });
   if (!customer) notFound();
 
-
   const { data: twin } = await digitalTwin({
     name: customer.name,
     company: customer.company,
@@ -43,6 +43,150 @@ export default async function CustomerDetailPage({
     recentActivity: customer.activities.map((a) => a.content).slice(0, 5),
   });
 
+  const overview = (
+    <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+      <Card className="lg:col-span-2">
+        <div className="grid grid-cols-2 gap-4 text-sm sm:grid-cols-3">
+          <Info icon={<Building2 size={15} />} label="Company" value={customer.company ?? "—"} />
+          <Info icon={<Mail size={15} />} label="Email" value={customer.email ?? "—"} />
+          <Info icon={<Phone size={15} />} label="Phone" value={customer.phone ?? "—"} />
+          {customer.altPhone && <Info icon={<Phone size={15} />} label="Alt. Mobile" value={customer.altPhone} />}
+          {customer.address && <Info icon={<Building2 size={15} />} label="Address" value={customer.address} />}
+          {customer.contractMonths && <Info label="Contract" value={`${customer.contractMonths} months`} />}
+        </div>
+        {(customer.website || customer.facebook || customer.instagram || customer.twitter || customer.otherLinks) && (
+          <div className="mt-4 flex flex-wrap gap-2">
+            {customer.website && <LinkChip href={customer.website} label="Website" />}
+            {customer.facebook && <LinkChip href={customer.facebook} label="Facebook" />}
+            {customer.instagram && <LinkChip href={customer.instagram} label="Instagram" />}
+            {customer.twitter && <LinkChip href={customer.twitter} label="Twitter" />}
+            {customer.otherLinks && <span className="badge bg-slate-100 text-slate-600">{customer.otherLinks}</span>}
+          </div>
+        )}
+        {customer.heroProducts && <Block label="Hero Products" text={customer.heroProducts} />}
+        {customer.inquiryReason && <Block label="Reason for Inquiry" text={customer.inquiryReason} />}
+        {customer.requirement && <Block label="Nature of Work / Requirement" text={customer.requirement} />}
+      </Card>
+
+      <Card>
+        <h2 className="mb-3 font-semibold text-slate-900">Account Summary</h2>
+        <div className="text-sm text-slate-500">
+          <p>Lifetime Value: <b className="text-slate-800">{formatCurrency(customer.lifetimeValue)}</b></p>
+          <p className="mt-1">Owner: {customer.owner?.name ?? "Unassigned"}</p>
+          {customer.tags.length > 0 && (
+            <div className="mt-2 flex flex-wrap gap-1">
+              {customer.tags.map((t) => <span key={t} className="badge bg-slate-100 text-slate-600">{t}</span>)}
+            </div>
+          )}
+        </div>
+      </Card>
+    </div>
+  );
+
+  const quotations = (
+    <Card>
+      <h2 className="mb-3 font-semibold text-slate-900">Quotations</h2>
+      {customer.quotations.length === 0 ? <Empty /> : (
+        <ul className="divide-y divide-slate-100 text-sm">
+          {customer.quotations.map((q) => (
+            <li key={q.id} className="flex items-center justify-between py-2">
+              <span className="text-slate-700">{q.number}</span>
+              <span className="flex items-center gap-3">
+                <Badge value={q.status} />
+                <span className="text-slate-600">{formatCurrency(q.total)}</span>
+              </span>
+            </li>
+          ))}
+        </ul>
+      )}
+    </Card>
+  );
+
+  const invoices = (
+    <Card>
+      <h2 className="mb-3 font-semibold text-slate-900">Invoices</h2>
+      {customer.invoices.length === 0 ? <Empty /> : (
+        <ul className="divide-y divide-slate-100 text-sm">
+          {customer.invoices.map((inv) => (
+            <li key={inv.id} className="flex items-center justify-between py-2">
+              <span className="text-slate-700">{inv.number}</span>
+              <span className="flex items-center gap-3">
+                <Badge value={inv.status} />
+                <span className="text-slate-600">{formatCurrency(inv.total)}</span>
+              </span>
+            </li>
+          ))}
+        </ul>
+      )}
+    </Card>
+  );
+
+  const digitalTwinCard = (
+    <Card>
+      <div className="mb-3 flex items-center gap-2">
+        <Brain size={16} className="text-brand-600" />
+        <h2 className="font-semibold text-slate-900">Digital Twin — Call Prep</h2>
+      </div>
+      <p className="mb-3 text-sm text-slate-600">{twin.summary}</p>
+      <div className="space-y-2 text-sm">
+        <TwinRow label="Best time to call" value={twin.bestTimeToCall} />
+        <TwinRow label="Best offer" value={twin.bestOffer} />
+        <TwinRow label="Recommended tone" value={twin.recommendedTone} />
+        <TwinRow label="Closing probability" value={`${twin.closingProbability}%`} />
+        {twin.topicsToAvoid.length > 0 && <TwinRow label="Topics to avoid" value={twin.topicsToAvoid.join(", ")} />}
+      </div>
+    </Card>
+  );
+
+  const activity = (
+    <Card>
+      <h2 className="mb-3 font-semibold text-slate-900">Recent Activity</h2>
+      {customer.activities.length === 0 ? <Empty /> : (
+        <ul className="space-y-2 text-sm">
+          {customer.activities.map((a) => (
+            <li key={a.id} className="border-b border-slate-50 pb-2 last:border-0">
+              <div className="flex items-center gap-2">
+                <Badge value={a.channel} />
+                <span className="text-xs text-slate-400">{formatDateTime(a.createdAt)}</span>
+              </div>
+              <p className="mt-1 text-slate-600">{a.content}</p>
+            </li>
+          ))}
+        </ul>
+      )}
+    </Card>
+  );
+
+  const reportHistory = (
+    <ReportHistory defaultOpen reports={customer.reports.map((r) => ({
+      id: r.id, title: r.title, createdAt: r.createdAt.toISOString(),
+      createdByName: r.createdBy?.name ?? null,
+      sends: r.sends.map((s) => ({
+        id: s.id, sentByName: s.sentBy?.name ?? null, sentTo: s.sentTo, createdAt: s.createdAt.toISOString(),
+      })),
+    }))} />
+  );
+
+  const clientInfo = (
+    <ClientInfoPanel
+      customerId={customer.id}
+      items={customer.clientInfo.map((k) => ({
+        id: k.id, kind: k.kind, title: k.title, body: k.body,
+        fileName: k.fileName, fileType: k.fileType, createdAt: k.createdAt.toISOString(),
+      }))}
+    />
+  );
+
+  const aiReport = (
+    <ClientReportPanel
+      customerId={customer.id}
+      customerName={customer.name}
+      initialReports={customer.reports.map((r) => ({
+        id: r.id, title: r.title, content: r.content, createdAt: r.createdAt.toISOString(),
+      }))}
+    />
+  );
+
   return (
     <div>
       <Link href="/customers" className="mb-4 inline-flex items-center gap-1 text-sm text-slate-500 hover:text-slate-800">
@@ -50,142 +194,16 @@ export default async function CustomerDetailPage({
       </Link>
       <PageHeader title={customer.name} subtitle={customer.company ?? undefined} />
 
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-        <div className="space-y-6 lg:col-span-2">
-          <Card>
-            <div className="grid grid-cols-2 gap-4 text-sm sm:grid-cols-3">
-              <Info icon={<Building2 size={15} />} label="Company" value={customer.company ?? "—"} />
-              <Info icon={<Mail size={15} />} label="Email" value={customer.email ?? "—"} />
-              <Info icon={<Phone size={15} />} label="Phone" value={customer.phone ?? "—"} />
-              {customer.altPhone && <Info icon={<Phone size={15} />} label="Alt. Mobile" value={customer.altPhone} />}
-              {customer.address && <Info icon={<Building2 size={15} />} label="Address" value={customer.address} />}
-              {customer.contractMonths && <Info label="Contract" value={`${customer.contractMonths} months`} />}
-            </div>
-            {(customer.website || customer.facebook || customer.instagram || customer.twitter || customer.otherLinks) && (
-              <div className="mt-4 flex flex-wrap gap-2">
-                {customer.website && <LinkChip href={customer.website} label="Website" />}
-                {customer.facebook && <LinkChip href={customer.facebook} label="Facebook" />}
-                {customer.instagram && <LinkChip href={customer.instagram} label="Instagram" />}
-                {customer.twitter && <LinkChip href={customer.twitter} label="Twitter" />}
-                {customer.otherLinks && <span className="badge bg-slate-100 text-slate-600">{customer.otherLinks}</span>}
-              </div>
-            )}
-            {customer.heroProducts && <Block label="Hero Products" text={customer.heroProducts} />}
-            {customer.inquiryReason && <Block label="Reason for Inquiry" text={customer.inquiryReason} />}
-            {customer.requirement && <Block label="Nature of Work / Requirement" text={customer.requirement} />}
-          </Card>
-
-          <Card>
-            <h2 className="mb-3 font-semibold text-slate-900">Quotations</h2>
-            {customer.quotations.length === 0 ? <Empty /> : (
-              <ul className="divide-y divide-slate-100 text-sm">
-                {customer.quotations.map((q) => (
-                  <li key={q.id} className="flex items-center justify-between py-2">
-                    <span className="text-slate-700">{q.number}</span>
-                    <span className="flex items-center gap-3">
-                      <Badge value={q.status} />
-                      <span className="text-slate-600">{formatCurrency(q.total)}</span>
-                    </span>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </Card>
-
-          <Card>
-            <h2 className="mb-3 font-semibold text-slate-900">Invoices</h2>
-            {customer.invoices.length === 0 ? <Empty /> : (
-              <ul className="divide-y divide-slate-100 text-sm">
-                {customer.invoices.map((inv) => (
-                  <li key={inv.id} className="flex items-center justify-between py-2">
-                    <span className="text-slate-700">{inv.number}</span>
-                    <span className="flex items-center gap-3">
-                      <Badge value={inv.status} />
-                      <span className="text-slate-600">{formatCurrency(inv.total)}</span>
-                    </span>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </Card>
-        </div>
-
-        <div className="space-y-6">
-          <Card>
-            <h2 className="mb-3 font-semibold text-slate-900">Account Summary</h2>
-            <div className="text-sm text-slate-500">
-              <p>Lifetime Value: <b className="text-slate-800">{formatCurrency(customer.lifetimeValue)}</b></p>
-              <p className="mt-1">Owner: {customer.owner?.name ?? "Unassigned"}</p>
-              {customer.tags.length > 0 && (
-                <div className="mt-2 flex flex-wrap gap-1">
-                  {customer.tags.map((t) => <span key={t} className="badge bg-slate-100 text-slate-600">{t}</span>)}
-                </div>
-              )}
-            </div>
-          </Card>
-
-          <Card>
-            <div className="mb-3 flex items-center gap-2">
-              <Brain size={16} className="text-brand-600" />
-              <h2 className="font-semibold text-slate-900">Digital Twin — Call Prep</h2>
-            </div>
-            <p className="mb-3 text-sm text-slate-600">{twin.summary}</p>
-            <div className="space-y-2 text-sm">
-              <TwinRow label="Best time to call" value={twin.bestTimeToCall} />
-              <TwinRow label="Best offer" value={twin.bestOffer} />
-              <TwinRow label="Recommended tone" value={twin.recommendedTone} />
-              <TwinRow label="Closing probability" value={`${twin.closingProbability}%`} />
-              {twin.topicsToAvoid.length > 0 && (
-                <TwinRow label="Topics to avoid" value={twin.topicsToAvoid.join(", ")} />
-              )}
-            </div>
-          </Card>
-
-          <Card>
-            <h2 className="mb-3 font-semibold text-slate-900">Recent Activity</h2>
-            {customer.activities.length === 0 ? <Empty /> : (
-              <ul className="space-y-2 text-sm">
-                {customer.activities.map((a) => (
-                  <li key={a.id} className="border-b border-slate-50 pb-2 last:border-0">
-                    <div className="flex items-center gap-2">
-                      <Badge value={a.channel} />
-                      <span className="text-xs text-slate-400">{formatDate(a.createdAt)}</span>
-                    </div>
-                    <p className="mt-1 text-slate-600">{a.content}</p>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </Card>
-        </div>
-      </div>
-
-      <div className="mt-6">
-        <ReportHistory reports={customer.reports.map((r) => ({
-          id: r.id, title: r.title, createdAt: r.createdAt.toISOString(),
-          createdByName: r.createdBy?.name ?? null,
-          sends: r.sends.map((s) => ({
-            id: s.id, sentByName: s.sentBy?.name ?? null, sentTo: s.sentTo, createdAt: s.createdAt.toISOString(),
-          })),
-        }))} />
-      </div>
-
-      <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-2">
-        <ClientInfoPanel
-          customerId={customer.id}
-          items={customer.clientInfo.map((k) => ({
-            id: k.id, kind: k.kind, title: k.title, body: k.body,
-            fileName: k.fileName, fileType: k.fileType, createdAt: k.createdAt.toISOString(),
-          }))}
-        />
-        <ClientReportPanel
-          customerId={customer.id}
-          customerName={customer.name}
-          initialReports={customer.reports.map((r) => ({
-            id: r.id, title: r.title, content: r.content, createdAt: r.createdAt.toISOString(),
-          }))}
-        />
-      </div>
+      <Tabs tabs={[
+        { key: "overview", label: "Overview", content: overview },
+        { key: "quotations", label: "Quotations", content: quotations },
+        { key: "invoices", label: "Invoices", content: invoices },
+        { key: "twin", label: "Digital Twin", content: digitalTwinCard },
+        { key: "activity", label: "Activity", content: activity },
+        { key: "history", label: "Report History", content: reportHistory },
+        { key: "info", label: "Client Information", content: clientInfo },
+        { key: "report", label: "AI Report", content: aiReport },
+      ]} />
     </div>
   );
 }

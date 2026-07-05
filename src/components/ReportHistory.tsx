@@ -8,8 +8,8 @@ import { formatDateTime } from "@/lib/utils";
 interface Send { id: string; sentByName: string | null; sentTo: string | null; createdAt: string; }
 interface Report { id: string; title: string; createdAt: string; createdByName: string | null; sends: Send[]; }
 
-export function ReportHistory({ reports }: { reports: Report[] }) {
-  const [open, setOpen] = useState(false);
+export function ReportHistory({ reports, defaultOpen = false }: { reports: Report[]; defaultOpen?: boolean }) {
+  const [open, setOpen] = useState(defaultOpen);
   const totalSends = reports.reduce((s, r) => s + r.sends.length, 0);
 
   return (
