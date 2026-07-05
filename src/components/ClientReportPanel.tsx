@@ -1,9 +1,9 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { Sparkles, FileText, Download, Trash2, ChevronDown, Save } from "lucide-react";
+import { Sparkles, FileText, Download, Trash2, ChevronDown, Save, Mail } from "lucide-react";
 import {
-  generateClientReportAction, updateReportAction, deleteReportAction,
+  generateClientReportAction, updateReportAction, deleteReportAction, sendReportEmailAction,
 } from "@/app/actions/reports";
 import { Card } from "@/components/ui";
 import { formatDate } from "@/lib/utils";
@@ -91,6 +91,7 @@ function ReportItem({ report, open, onToggle, onDelete }: {
   const [content, setContent] = useState(report.content);
   const [pending, start] = useTransition();
   const [saved, setSaved] = useState(false);
+  const [emailMsg, setEmailMsg] = useState<string | null>(null);
 
   function save() {
     start(async () => { await updateReportAction(report.id, content, title); setSaved(true); setTimeout(() => setSaved(false), 2000); });
@@ -101,6 +102,13 @@ function ReportItem({ report, open, onToggle, onDelete }: {
     const a = document.createElement("a");
     a.href = url; a.download = `${title.replace(/[^\w\s-]/g, "").trim() || "report"}.md`;
     a.click(); URL.revokeObjectURL(url);
+  }
+  function sendEmail() {
+    start(async () => {
+      const r = await sendReportEmailAction(report.id, title, content);
+      setEmailMsg(r?.ok ? (r.mocked ? "Queued (mock — set BREVO_API_KEY)" : "Emailed to client ✅") : (r?.error || "Failed"));
+      setTimeout(() => setEmailMsg(null), 3000);
+    });
   }
 
   return (
@@ -116,10 +124,12 @@ function ReportItem({ report, open, onToggle, onDelete }: {
           <input value={title} onChange={(e) => setTitle(e.target.value)} className="input font-medium" />
           <textarea value={content} onChange={(e) => setContent(e.target.value)} rows={16}
             className="input font-mono text-xs leading-relaxed" />
-          <div className="flex items-center justify-end gap-2">
+          <div className="flex flex-wrap items-center justify-end gap-2">
             {saved && <span className="text-xs text-emerald-600">Saved ✅</span>}
+            {emailMsg && <span className="text-xs text-emerald-600">{emailMsg}</span>}
             <button onClick={onDelete} className="btn-ghost text-xs text-rose-600"><Trash2 size={14} /> Delete</button>
             <button onClick={download} className="btn-ghost text-xs"><Download size={14} /> Download</button>
+            <button onClick={sendEmail} disabled={pending} className="btn-ghost text-xs"><Mail size={14} /> Send to Client</button>
             <button onClick={save} disabled={pending} className="btn-primary text-xs"><Save size={14} /> {pending ? "Saving…" : "Save"}</button>
           </div>
         </div>

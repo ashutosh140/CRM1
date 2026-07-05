@@ -386,12 +386,14 @@ export async function generateClientReport(ctx: {
   activities: { channel: string; direction: string; content: string; sentiment?: string | null; date: string }[];
   quotations: { number: string; status: string; total: number }[];
   invoices: { number: string; status: string; total: number; paid: number }[];
+  clientInfo?: { kind: string; title?: string | null; text?: string | null }[];
   instruction: string;
 }): Promise<{ data: ClientReportResult; mocked: boolean }> {
   const c = ctx.customer;
   const convo = ctx.activities.map((a) => `- [${a.date}] ${a.direction} via ${a.channel}${a.sentiment ? ` (${a.sentiment})` : ""}: ${a.content}`).join("\n") || "- No recorded interactions.";
   const quotes = ctx.quotations.map((q) => `- ${q.number} — ${q.status} — ₹${q.total.toLocaleString("en-IN")}`).join("\n") || "- None";
   const invs = ctx.invoices.map((i) => `- ${i.number} — ${i.status} — ₹${i.total.toLocaleString("en-IN")} (paid ₹${i.paid.toLocaleString("en-IN")})`).join("\n") || "- None";
+  const saved = (ctx.clientInfo ?? []).map((k) => `- [${k.kind}] ${k.title ?? ""}${k.text ? `: ${k.text}` : ""}`.trim()).join("\n") || "- None";
 
   const fallback: ClientReportResult = {
     title: `Client Report — ${c.name}`,
@@ -400,7 +402,7 @@ export async function generateClientReport(ctx: {
       `**Company:** ${c.company ?? "—"}  \n**Email:** ${c.email ?? "—"}  \n**Phone:** ${c.phone ?? "—"}  \n` +
       `**Health Score:** ${c.healthScore}/100  \n**Lifetime Value:** ₹${c.lifetimeValue.toLocaleString("en-IN")}  \n**Tags:** ${c.tags.join(", ") || "—"}\n\n` +
       `## Request\n${ctx.instruction || "General relationship summary."}\n\n` +
-      `## Interaction History\n${convo}\n\n## Quotations\n${quotes}\n\n## Invoices\n${invs}\n\n` +
+      `## Saved Client Information\n${saved}\n\n## Interaction History\n${convo}\n\n## Quotations\n${quotes}\n\n## Invoices\n${invs}\n\n` +
       `## Summary\n${c.healthScore < 40 ? "This customer is at risk — prioritise a personal call and a retention offer." : "This customer is healthy and engaged — a strong candidate for upsell."}\n\n` +
       `_Add OPENAI_API_KEY for a richer AI-written report._`,
   };
@@ -412,6 +414,7 @@ export async function generateClientReport(ctx: {
     `INSTRUCTION FROM SALES REP:\n${ctx.instruction || "Write a general client relationship report."}\n\n` +
       `CLIENT: ${c.name} (${c.company ?? "—"})\nEmail: ${c.email ?? "—"} | Phone: ${c.phone ?? "—"}\n` +
       `Health: ${c.healthScore}/100 | LTV: ₹${c.lifetimeValue} | Tags: ${c.tags.join(", ")}\n\n` +
+      `SAVED CLIENT INFORMATION (notes/links/files the team logged):\n${saved}\n\n` +
       `INTERACTIONS:\n${convo}\n\nQUOTATIONS:\n${quotes}\n\nINVOICES:\n${invs}`,
     fallback,
     { timeout: 30000, maxTokens: 1800 }

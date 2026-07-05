@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { digitalTwin } from "@/lib/ai";
 import { Card, Badge, PageHeader } from "@/components/ui";
 import { ClientReportPanel } from "@/components/ClientReportPanel";
+import { ClientInfoPanel } from "@/components/ClientInfoPanel";
 import { formatCurrency, formatDate } from "@/lib/utils";
 
 export default async function CustomerDetailPage({
@@ -21,6 +22,7 @@ export default async function CustomerDetailPage({
       invoices: { orderBy: { createdAt: "desc" }, take: 10 },
       activities: { orderBy: { createdAt: "desc" }, take: 10 },
       reports: { orderBy: { createdAt: "desc" }, take: 20 },
+      clientInfo: { orderBy: { createdAt: "desc" }, take: 50 },
     },
   });
   if (!customer) notFound();
@@ -151,7 +153,14 @@ export default async function CustomerDetailPage({
         </div>
       </div>
 
-      <div className="mt-6">
+      <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-2">
+        <ClientInfoPanel
+          customerId={customer.id}
+          items={customer.clientInfo.map((k) => ({
+            id: k.id, kind: k.kind, title: k.title, body: k.body,
+            fileName: k.fileName, fileType: k.fileType, createdAt: k.createdAt.toISOString(),
+          }))}
+        />
         <ClientReportPanel
           customerId={customer.id}
           customerName={customer.name}

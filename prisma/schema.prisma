@@ -101,6 +101,12 @@ enum InsightType {
   RECOMMENDATION
 }
 
+enum ClientInfoKind {
+  NOTE
+  LINK
+  FILE
+}
+
 // ───────────────────────── Models ─────────────────────────
 
 model User {
@@ -283,11 +289,28 @@ model Customer {
   activities Activity[]
   insights   AiInsight[]
   reports    ClientReport[]
+  clientInfo ClientInfo[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   @@index([ownerId])
+}
+
+// Saved knowledge about a client — notes, links, images, PDFs. Feeds AI reports.
+model ClientInfo {
+  id         String         @id @default(cuid())
+  customerId String
+  customer   Customer       @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  kind       ClientInfoKind @default(NOTE)
+  title      String?
+  body       String?        // note text OR link URL
+  fileName   String?
+  fileType   String?
+  fileData   String?        // base64 data URL for images/PDFs
+  createdAt  DateTime       @default(now())
+
+  @@index([customerId, createdAt])
 }
 
 model Task {
