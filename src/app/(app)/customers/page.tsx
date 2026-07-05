@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { UserCircle } from "lucide-react";
+import { Plus } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { PageHeader, ScoreBar, EmptyState } from "@/components/ui";
 import { formatCurrency, initials } from "@/lib/utils";
@@ -16,7 +16,15 @@ export default async function CustomersPage() {
 
   return (
     <div>
-      <PageHeader title="Customers" subtitle="Complete profiles with AI Health Score & lifetime value." />
+      <PageHeader
+        title="Customers"
+        subtitle="Clients doing business with you — with AI Health Score & lifetime value."
+        action={
+          <Link href="/customers/new" className="btn-primary">
+            <Plus size={16} /> Add Customer
+          </Link>
+        }
+      />
       {customers.length === 0 ? (
         <EmptyState message="No customers yet. Won leads become customers, or seed the database." />
       ) : (

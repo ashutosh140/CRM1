@@ -1,9 +1,37 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
+import { getCurrentUser } from "@/lib/auth";
 import { draftEmail } from "@/lib/ai";
 import { sendEmail, emailTemplate } from "@/lib/email";
+
+/** Manually add a new customer (a converted lead / active client). */
+export async function createCustomerAction(_prev: unknown, formData: FormData) {
+  const name = String(formData.get("name") || "").trim();
+  if (!name) return { error: "Name is required." };
+  const me = await getCurrentUser();
+
+  const tags = String(formData.get("tags") || "")
+    .split(",").map((t) => t.trim()).filter(Boolean);
+
+  const customer = await prisma.customer.create({
+    data: {
+      name,
+      company: String(formData.get("company") || "") || null,
+      email: String(formData.get("email") || "") || null,
+      phone: String(formData.get("phone") || "") || null,
+      address: String(formData.get("address") || "") || null,
+      healthScore: Math.max(0, Math.min(100, Number(formData.get("healthScore") || 60))),
+      lifetimeValue: Number(formData.get("lifetimeValue") || 0),
+      tags,
+      ownerId: String(formData.get("ownerId") || "") || me?.id || null,
+    },
+  });
+  revalidatePath("/customers");
+  redirect(`/customers/${customer.id}`);
+}
 
 /** Lost Customer Recovery — AI drafts & sends a win-back offer, logs it, nudges health. */
 export async function recoverCustomerAction(customerId: string) {
