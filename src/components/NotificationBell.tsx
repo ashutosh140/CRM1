@@ -70,7 +70,7 @@ export function NotificationBell() {
               <p className="p-6 text-center text-sm text-slate-400">No notifications yet.</p>
             ) : items.map((n) => (
               <button key={n.id} onClick={() => openItem(n)}
-                className={`flex w-full items-start gap-2 border-b border-slate-50 p-3 text-left hover:bg-slate-50 ${n.read ? "" : "bg-brand-50/40"}`}>
+                className={`flex w-full items-start gap-2 border-b border-slate-50 p-3 text-left hover:bg-slate-50 ${n.read ? "" : "bg-brand-50 dark:bg-brand-500/10"}`}>
                 {!n.read && <span className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-rose-500" />}
                 <div className={`min-w-0 flex-1 ${n.read ? "pl-4" : ""}`}>
                   <p className="text-sm font-medium text-slate-800">{n.title}</p>
