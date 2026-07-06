@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import {
   Search, CornerDownLeft, LayoutDashboard, Users, UserCircle, CheckSquare,
   FileText, Receipt, MessageSquare, BarChart3, Video, UserCog, Settings, ArrowRight,
+  CalendarDays, NotebookPen,
 } from "lucide-react";
 import type { Role } from "@prisma/client";
 
@@ -18,6 +19,8 @@ const NAV: { title: string; href: string; icon: React.ReactNode; min: Role }[] =
   { title: "Leads", href: "/leads", icon: <Users size={16} />, min: "SALES" },
   { title: "Customers", href: "/customers", icon: <UserCircle size={16} />, min: "SALES" },
   { title: "Tasks", href: "/tasks", icon: <CheckSquare size={16} />, min: "EMPLOYEE" },
+  { title: "Calendar", href: "/calendar", icon: <CalendarDays size={16} />, min: "EMPLOYEE" },
+  { title: "Notes", href: "/notes", icon: <NotebookPen size={16} />, min: "EMPLOYEE" },
   { title: "Quotations", href: "/quotations", icon: <FileText size={16} />, min: "SALES" },
   { title: "Invoices", href: "/invoices", icon: <Receipt size={16} />, min: "SALES" },
   { title: "Communication", href: "/communication", icon: <MessageSquare size={16} />, min: "SALES" },

@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 import {
   LayoutDashboard, Users, UserCircle, CheckSquare,
   FileText, Receipt, MessageSquare, BarChart3, Sparkles, Settings, Video, UserCog,
+  CalendarDays, NotebookPen,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { Role } from "@prisma/client";
@@ -15,6 +16,8 @@ const NAV = [
   { href: "/leads", label: "Leads", icon: Users, min: "SALES" },
   { href: "/customers", label: "Customers", icon: UserCircle, min: "SALES" },
   { href: "/tasks", label: "Tasks", icon: CheckSquare, min: "EMPLOYEE" },
+  { href: "/calendar", label: "Calendar", icon: CalendarDays, min: "EMPLOYEE" },
+  { href: "/notes", label: "Notes", icon: NotebookPen, min: "EMPLOYEE" },
   { href: "/quotations", label: "Quotations", icon: FileText, min: "SALES" },
   { href: "/invoices", label: "Invoices", icon: Receipt, min: "SALES" },
   { href: "/communication", label: "Communication", icon: MessageSquare, min: "SALES" },

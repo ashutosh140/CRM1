@@ -46,10 +46,11 @@ export function AssistantWidget() {
       {/* Floating button */}
       <button
         onClick={() => setOpen((o) => !o)}
-        className="fixed bottom-6 right-6 z-[80] flex h-14 w-14 items-center justify-center rounded-full bg-brand-600 text-white shadow-2xl ring-4 ring-brand-500/20 transition hover:scale-105 hover:bg-brand-700"
+        className="fixed bottom-6 right-6 z-[85] flex items-center gap-2 rounded-full bg-brand-600 px-4 py-3.5 text-white shadow-2xl ring-4 ring-brand-500/25 transition hover:scale-105 hover:bg-brand-700"
         title="Ask the AI Assistant"
       >
         {open ? <X size={22} /> : <Sparkles size={22} />}
+        {!open && <span className="hidden text-sm font-semibold sm:inline">Ask AI</span>}
       </button>
 
       {open && (
