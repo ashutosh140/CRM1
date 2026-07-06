@@ -509,3 +509,34 @@ export async function draftEmail(ctx: {
     fallback
   );
 }
+
+/** Free-text CRM assistant — answers a question grounded ONLY in the provided data snapshot. */
+export async function askAssistant(question: string, context: string): Promise<{ answer: string; mocked: boolean }> {
+  if (!client) {
+    return { answer: `AI is not configured, but here is your current data snapshot:\n\n${context}`, mocked: true };
+  }
+  try {
+    const res = await client.chat.completions.create(
+      {
+        model: MODEL,
+        temperature: 0.3,
+        max_tokens: 450,
+        messages: [
+          {
+            role: "system",
+            content:
+              "You are the built-in assistant of an AI CRM. Answer the user's question using ONLY the CRM DATA SNAPSHOT provided. " +
+              "Be concise and practical; use short bullets or numbers. All money is in Indian Rupees (₹). " +
+              "If the snapshot doesn't contain the answer, say so in one line and suggest what to check. Never invent data.",
+          },
+          { role: "user", content: `CRM DATA SNAPSHOT:\n${context}\n\nQUESTION: ${question}` },
+        ],
+      },
+      { timeout: 15000 }
+    );
+    return { answer: res.choices[0]?.message?.content?.trim() || "I couldn't find an answer.", mocked: false };
+  } catch (err) {
+    console.error("[ai] assistant failed:", err);
+    return { answer: "Sorry, I couldn't reach the AI just now. Please try again in a moment.", mocked: true };
+  }
+}

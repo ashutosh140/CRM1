@@ -4,6 +4,7 @@ import { Sidebar } from "@/components/Sidebar";
 import { Topbar } from "@/components/Topbar";
 import { CommandPalette } from "@/components/CommandPalette";
 import { Toaster } from "@/components/Toaster";
+import { AssistantWidget } from "@/components/AssistantWidget";
 
 export default async function AppLayout({
   children,
@@ -21,6 +22,7 @@ export default async function AppLayout({
         <main className="flex-1 overflow-y-auto p-6">{children}</main>
       </div>
       <CommandPalette role={user.role} />
+      <AssistantWidget />
       <Toaster />
     </div>
   );
