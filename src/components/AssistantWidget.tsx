@@ -13,7 +13,8 @@ const SUGGESTIONS = [
   "How many overdue invoices?",
 ];
 
-export function AssistantWidget() {
+export function AssistantWidget({ name = "" }: { name?: string }) {
+  const firstName = name.split(" ")[0] || "there";
   const [open, setOpen] = useState(false);
   const [msgs, setMsgs] = useState<Msg[]>([]);
   const [text, setText] = useState("");
@@ -84,8 +85,8 @@ export function AssistantWidget() {
           <div className="flex items-center gap-2 bg-brand-600 px-4 py-3 text-white">
             <Bot size={18} />
             <div className="flex-1">
-              <p className="text-sm font-semibold leading-tight">AI Assistant</p>
-              <p className="text-[11px] text-brand-100">Ask anything about your CRM</p>
+              <p className="text-sm font-semibold leading-tight">{firstName}&apos;s AI Assistant</p>
+              <p className="text-[11px] text-brand-100">Your personal CRM copilot</p>
             </div>
             <button onClick={() => setOpen(false)} className="text-brand-100 hover:text-white"><X size={18} /></button>
           </div>
@@ -94,7 +95,7 @@ export function AssistantWidget() {
           <div className="flex-1 space-y-3 overflow-y-auto bg-slate-50 p-3 dark:bg-slate-900/40">
             {msgs.length === 0 && (
               <div className="space-y-2">
-                <p className="text-center text-xs text-slate-400">Hi! Ask me about your leads, revenue, tasks &amp; more.</p>
+                <p className="text-center text-xs text-slate-400">Hi {firstName}! 👋 Ask me anything about <b>your</b> leads, revenue, tasks &amp; more.</p>
                 {SUGGESTIONS.map((s) => (
                   <button key={s} onClick={() => ask(s)}
                     className="block w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-left text-xs text-slate-600 hover:border-brand-300 hover:bg-brand-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300">

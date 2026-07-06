@@ -22,7 +22,7 @@ export default async function AppLayout({
         <main className="flex-1 overflow-y-auto p-6">{children}</main>
       </div>
       <CommandPalette role={user.role} />
-      <AssistantWidget />
+      <AssistantWidget name={user.name} />
       <Toaster />
     </div>
   );
