@@ -1,7 +1,7 @@
 "use client";
 
-import { useActionState } from "react";
-import { KeyRound } from "lucide-react";
+import { useActionState, useState } from "react";
+import { KeyRound, Eye, EyeOff } from "lucide-react";
 import { updateProfileAction, changePasswordAction } from "@/app/actions/profile";
 import { Card } from "@/components/ui";
 import { ThemeToggle } from "@/components/ThemeToggle";
@@ -58,6 +58,22 @@ export function AccountForm({
   );
 }
 
+function PasswordInput({ name, placeholder }: { name: string; placeholder: string }) {
+  const [show, setShow] = useState(false);
+  return (
+    <div className="relative">
+      <input name={name} type={show ? "text" : "password"} className="input pr-10" placeholder={placeholder} required minLength={name === "current" ? undefined : 6} />
+      <button
+        type="button" onClick={() => setShow((v) => !v)} tabIndex={-1}
+        className="absolute inset-y-0 right-0 flex items-center px-3 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+        aria-label={show ? "Hide password" : "Show password"}
+      >
+        {show ? <EyeOff size={16} /> : <Eye size={16} />}
+      </button>
+    </div>
+  );
+}
+
 function ChangePassword() {
   const [state, formAction, pending] = useActionState(changePasswordAction, null);
 
@@ -74,16 +90,16 @@ function ChangePassword() {
       <form key={state?.ok ? "done" : "form"} action={formAction} className="space-y-4">
         <div>
           <label className="label">Current password</label>
-          <input name="current" type="password" className="input" placeholder="••••••••" required />
+          <PasswordInput name="current" placeholder="••••••••" />
         </div>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div>
             <label className="label">New password</label>
-            <input name="next" type="password" className="input" placeholder="At least 6 characters" required />
+            <PasswordInput name="next" placeholder="At least 6 characters" />
           </div>
           <div>
             <label className="label">Confirm new password</label>
-            <input name="confirm" type="password" className="input" placeholder="Re-enter new password" required />
+            <PasswordInput name="confirm" placeholder="Re-enter new password" />
           </div>
         </div>
         {state?.error && <p className="text-sm text-red-600">{state.error}</p>}
