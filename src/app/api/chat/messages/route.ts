@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { getCurrentUser } from "@/lib/auth";
+import { getCurrentUser, hasRole } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
 
@@ -19,7 +19,7 @@ export async function GET(req: Request) {
     const member = await prisma.groupMember.findUnique({
       where: { groupId_userId: { groupId: id, userId: me.id } },
     });
-    if (!member && me.role !== "ADMIN") {
+    if (!member && !hasRole(me.role, "ADMIN")) {
       return NextResponse.json({ error: "forbidden" }, { status: 403 });
     }
     where = { groupId: id };
@@ -41,9 +41,12 @@ export async function GET(req: Request) {
     where,
     orderBy: { createdAt: "asc" },
     take: 300,
+    // NOTE: never select `fileData` here — it's the full file blob. The chat polls
+    // this endpoint every ~2s, so pulling every attachment's bytes each time is huge.
+    // The actual file is streamed on demand from /api/messages/[id]/file instead.
     select: {
       id: true, senderId: true, body: true, fileName: true, fileType: true,
-      fileData: true, createdAt: true, sender: { select: { name: true } },
+      createdAt: true, sender: { select: { name: true } },
     },
   });
 
@@ -52,7 +55,7 @@ export async function GET(req: Request) {
     messages: rows.map((m) => ({
       id: m.id, senderId: m.senderId, senderName: m.sender.name,
       body: m.body, fileName: m.fileName, fileType: m.fileType,
-      hasFile: Boolean(m.fileData), createdAt: m.createdAt.toISOString(),
+      hasFile: Boolean(m.fileName), createdAt: m.createdAt.toISOString(),
     })),
   }, { headers: { "Cache-Control": "no-store" } });
 }

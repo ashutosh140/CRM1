@@ -58,13 +58,20 @@ export function TeamChat({
     return () => clearInterval(i);
   }, [refreshSidebar]);
 
-  // poll active conversation every 2s
+  // poll active conversation every 2s + refetch instantly when tab regains focus
   useEffect(() => {
     if (!target) return;
     loadMessages(target);
     const i = setInterval(() => loadMessages(target), 2000);
-    return () => clearInterval(i);
-  }, [target, loadMessages]);
+    const onFocus = () => { if (!document.hidden) { loadMessages(target); refreshSidebar(); } };
+    window.addEventListener("focus", onFocus);
+    document.addEventListener("visibilitychange", onFocus);
+    return () => {
+      clearInterval(i);
+      window.removeEventListener("focus", onFocus);
+      document.removeEventListener("visibilitychange", onFocus);
+    };
+  }, [target, loadMessages, refreshSidebar]);
 
   useEffect(() => { bottomRef.current?.scrollIntoView({ behavior: "smooth" }); }, [messages]);
 

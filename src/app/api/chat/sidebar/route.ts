@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { getCurrentUser } from "@/lib/auth";
+import { getCurrentUser, hasRole } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
 
@@ -20,8 +20,8 @@ export async function GET() {
       where: { recipientId: me.id, readAt: null },
       _count: { _all: true },
     }),
-    // admin sees ALL groups; others see groups they belong to
-    me.role === "ADMIN"
+    // admin/super-admin sees ALL groups; others see groups they belong to
+    hasRole(me.role, "ADMIN")
       ? prisma.group.findMany({
           orderBy: { createdAt: "desc" },
           select: { id: true, name: true, _count: { select: { members: true } } },
