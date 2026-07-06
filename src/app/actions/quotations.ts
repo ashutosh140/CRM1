@@ -18,13 +18,17 @@ interface Item {
   unitPrice: number;
 }
 
-function computeTotals(items: Item[], taxRate: number) {
+function computeTotals(items: Item[], taxRate: number, discount = 0) {
   const subtotal = items.reduce((s, i) => s + i.qty * i.unitPrice, 0);
-  const taxAmount = Math.round((subtotal * taxRate) / 100);
-  return { subtotal, taxAmount, total: subtotal + taxAmount };
+  const discounted = Math.max(0, subtotal - discount);
+  const taxAmount = Math.round((discounted * taxRate) / 100);
+  return { subtotal, discount, taxAmount, total: discounted + taxAmount };
 }
 
 export async function createQuotationAction(_prev: unknown, formData: FormData) {
+  const user = await getCurrentUser();
+  if (!user) return { error: "Not authenticated" };
+
   const customerId = String(formData.get("customerId") || "");
   if (!customerId) return { error: "Please choose a customer." };
 
@@ -38,17 +42,20 @@ export async function createQuotationAction(_prev: unknown, formData: FormData) 
   if (items.length === 0) return { error: "Add at least one item." };
 
   const taxRate = Number(formData.get("taxRate") || 18);
-  const { subtotal, taxAmount, total } = computeTotals(items, taxRate);
-  const user = await getCurrentUser();
+  const discountInput = Math.max(0, Number(formData.get("discount") || 0));
+  const { subtotal, discount, taxAmount, total } = computeTotals(items, taxRate, discountInput);
+  const validRaw = String(formData.get("validUntil") || "").trim();
+  const validUntil = validRaw ? new Date(validRaw) : null;
 
-  const quote = await prisma.quotation.create({
+  await prisma.quotation.create({
     data: {
       number: genNumber("QT"),
       customerId,
       items: items as object,
-      subtotal, taxRate, taxAmount, total,
+      subtotal, discount, taxRate, taxAmount, total,
+      validUntil,
       notes: String(formData.get("notes") || "") || null,
-      createdById: user?.id,
+      createdById: user.id,
       status: "DRAFT",
     },
   });

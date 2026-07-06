@@ -1,11 +1,17 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import { prisma } from "@/lib/prisma";
+import { getCurrentUser } from "@/lib/auth";
+import { customerScope } from "@/lib/scope";
 import { PageHeader } from "@/components/ui";
 import { QuotationForm } from "@/components/QuotationForm";
 
 export default async function NewQuotationPage() {
+  const me = await getCurrentUser();
+  if (!me) redirect("/login");
   const customers = await prisma.customer.findMany({
+    where: customerScope(me),
     orderBy: { name: "asc" },
     select: { id: true, name: true },
   });

@@ -392,6 +392,7 @@ model Quotation {
   status    QuotationStatus @default(DRAFT)
   items     Json            // [{description, qty, unitPrice}]
   subtotal  Float           @default(0)
+  discount  Float           @default(0)
   taxRate   Float           @default(18)
   taxAmount Float           @default(0)
   total     Float           @default(0)
