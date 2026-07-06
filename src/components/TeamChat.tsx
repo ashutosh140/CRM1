@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState, useTransition } from "react";
 import { Send, Paperclip, Search, FileText, Download, Users, Plus, X } from "lucide-react";
 import { sendMessageAction, createGroupAction } from "@/app/actions/messages";
 import { initials } from "@/lib/utils";
+import { toast } from "@/lib/toast";
 import type { Role } from "@prisma/client";
 
 interface Contact { id: string; name: string; email: string; role: Role; unread: number; }
@@ -79,7 +80,7 @@ export function TeamChat({
   function handleSend() {
     if (!target || (!text.trim() && !file)) return;
     if (file && file.size > MAX_MB * 1024 * 1024) {
-      alert(`File is too large. The maximum allowed size is ${MAX_MB} MB.`);
+      toast(`File is too large. Maximum allowed size is ${MAX_MB} MB.`, "error");
       return;
     }
     const fd = new FormData();
@@ -92,7 +93,7 @@ export function TeamChat({
     if (fileRef.current) fileRef.current.value = "";
     start(async () => {
       const r = await sendMessageAction(fd);
-      if (r?.error) { setText(st); setFile(sf); alert(r.error); return; }
+      if (r?.error) { setText(st); setFile(sf); toast(r.error, "error"); return; }
       loadMessages(target);
     });
   }

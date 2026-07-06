@@ -7,6 +7,7 @@ import {
 } from "@/app/actions/reports";
 import { Card } from "@/components/ui";
 import { formatDate } from "@/lib/utils";
+import { toast } from "@/lib/toast";
 
 interface Report { id: string; title: string; content: string; createdAt: string; }
 
@@ -30,7 +31,7 @@ export function ClientReportPanel({
   function generate() {
     start(async () => {
       const r = await generateClientReportAction(customerId, instruction);
-      if (r?.error) { alert(r.error); return; }
+      if (r?.error) { toast(r.error, "error"); return; }
       if (r.ok && r.report) {
         setReports((prev) => [r.report as Report, ...prev]);
         setOpenId(r.report.id);

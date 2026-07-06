@@ -2,6 +2,8 @@ import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/auth";
 import { Sidebar } from "@/components/Sidebar";
 import { Topbar } from "@/components/Topbar";
+import { CommandPalette } from "@/components/CommandPalette";
+import { Toaster } from "@/components/Toaster";
 
 export default async function AppLayout({
   children,
@@ -18,6 +20,8 @@ export default async function AppLayout({
         <Topbar name={user.name} role={user.role} />
         <main className="flex-1 overflow-y-auto p-6">{children}</main>
       </div>
+      <CommandPalette role={user.role} />
+      <Toaster />
     </div>
   );
 }

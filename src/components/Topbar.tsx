@@ -4,13 +4,17 @@ import { initials } from "@/lib/utils";
 import { LogOut, Settings2 } from "lucide-react";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { NotificationBell } from "@/components/NotificationBell";
+import { SearchTrigger } from "@/components/SearchTrigger";
 import type { Role } from "@prisma/client";
 
 export function Topbar({ name, role }: { name: string; role: Role }) {
   return (
     <header className="flex h-16 shrink-0 items-center justify-between border-b border-slate-200 bg-white px-6">
-      <div className="text-sm text-slate-500">
-        Welcome back, <span className="font-medium text-slate-800">{name.split(" ")[0]}</span>
+      <div className="flex items-center gap-4">
+        <div className="hidden text-sm text-slate-500 md:block">
+          Welcome back, <span className="font-medium text-slate-800">{name.split(" ")[0]}</span>
+        </div>
+        <SearchTrigger />
       </div>
       <div className="flex items-center gap-3">
         <NotificationBell />
