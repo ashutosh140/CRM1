@@ -27,10 +27,10 @@ function LoginForm() {
         <span className="h-px flex-1 bg-slate-200 dark:bg-slate-700" /> or continue with email <span className="h-px flex-1 bg-slate-200 dark:bg-slate-700" />
       </div>
 
-      <form action={formAction} className="space-y-4">
+      <form action={formAction} className="space-y-4" autoComplete="off">
         <div>
           <label className="label" htmlFor="email">Email</label>
-          <input id="email" name="email" type="email" autoComplete="email" className="input" placeholder="Email" required />
+          <input id="email" name="email" type="email" autoComplete="off" className="input" placeholder="Email" required />
         </div>
         <div>
           <div className="mb-1 flex items-center justify-between">
@@ -40,7 +40,7 @@ function LoginForm() {
           <div className="relative">
             <input
               id="password" name="password" type={showPw ? "text" : "password"}
-              autoComplete="current-password" className="input pr-10" placeholder="Password" required
+              autoComplete="new-password" className="input pr-10" placeholder="Password" required
             />
             <button
               type="button" onClick={() => setShowPw((v) => !v)}
