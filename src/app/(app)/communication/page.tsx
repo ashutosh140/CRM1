@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
-import { getCurrentUser } from "@/lib/auth";
+import { getCurrentUser, hasRole } from "@/lib/auth";
 import { PageHeader } from "@/components/ui";
 import { TeamChat } from "@/components/TeamChat";
 
@@ -18,7 +18,7 @@ export default async function CommunicationPage() {
         orderBy: { name: "asc" },
         select: { id: true, name: true, email: true, role: true },
       }),
-      me.role === "ADMIN"
+      hasRole(me.role, "ADMIN")
         ? prisma.group.findMany({ orderBy: { createdAt: "desc" }, select: { id: true, name: true, _count: { select: { members: true } } } })
         : prisma.group.findMany({ where: { members: { some: { userId: me.id } } }, orderBy: { createdAt: "desc" }, select: { id: true, name: true, _count: { select: { members: true } } } }),
     ]);

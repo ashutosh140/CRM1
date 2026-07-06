@@ -2,7 +2,7 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { ArrowLeft, Eye, User2, CheckCircle2, RotateCcw, ClipboardCheck, MessageSquare } from "lucide-react";
 import { prisma } from "@/lib/prisma";
-import { getCurrentUser } from "@/lib/auth";
+import { getCurrentUser, canSeeAll } from "@/lib/auth";
 import { Card, Badge, PageHeader } from "@/components/ui";
 import { TaskWorkflow } from "@/components/TaskWorkflow";
 import { formatDateTime, initials } from "@/lib/utils";
@@ -35,7 +35,8 @@ export default async function TaskDetailPage({
 
   const isAssignee = task.assigneeId === me.id;
   const isAssigner = task.creatorId === me.id;
-  if (!isAssignee && !isAssigner && me.role !== "ADMIN") notFound();
+  // MANAGER+ (and Admin/Super Admin) can view any task to monitor the team.
+  if (!isAssignee && !isAssigner && !canSeeAll(me.role)) notFound();
 
   const users = await prisma.user.findMany({
     where: { isActive: true, id: { not: me.id } },

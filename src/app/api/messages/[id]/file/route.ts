@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { getCurrentUser } from "@/lib/auth";
+import { getCurrentUser, hasRole } from "@/lib/auth";
 
 /** Serve a message's shared file — only to the sender or recipient. */
 export async function GET(
@@ -19,7 +19,7 @@ export async function GET(
 
   let allowed = msg.senderId === me.id || msg.recipientId === me.id;
   if (!allowed && msg.groupId) {
-    if (me.role === "ADMIN") allowed = true;
+    if (hasRole(me.role, "ADMIN")) allowed = true;
     else {
       const member = await prisma.groupMember.findUnique({
         where: { groupId_userId: { groupId: msg.groupId, userId: me.id } },

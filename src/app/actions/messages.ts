@@ -1,7 +1,7 @@
 "use server";
 
 import { prisma } from "@/lib/prisma";
-import { getCurrentUser } from "@/lib/auth";
+import { getCurrentUser, hasRole } from "@/lib/auth";
 import { notify, notifyMany } from "@/lib/notify";
 
 const MAX_FILE = 10 * 1024 * 1024; // 10 MB
@@ -36,7 +36,7 @@ export async function sendMessageAction(formData: FormData) {
     const member = await prisma.groupMember.findUnique({
       where: { groupId_userId: { groupId: targetId, userId: me.id } },
     });
-    if (!member && me.role !== "ADMIN") return { error: "Not a group member." };
+    if (!member && !hasRole(me.role, "ADMIN")) return { error: "Not a group member." };
     await prisma.message.create({
       data: { senderId: me.id, groupId: targetId, body: body || null, fileName, fileType, fileData },
     });
