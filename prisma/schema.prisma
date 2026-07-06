@@ -117,6 +117,9 @@ model User {
   passwordHash String
   role         Role     @default(SALES)
   avatarUrl    String?
+  phone        String?
+  aadhaar      String?
+  pan          String?
   isActive     Boolean  @default(true)
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt

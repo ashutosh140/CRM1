@@ -46,8 +46,12 @@ export default async function SettingsPage() {
       </Card>
 
       <UserManager
-        users={users.map((u) => ({ id: u.id, name: u.name, email: u.email, role: u.role, isActive: u.isActive }))}
+        users={users.map((u) => ({
+          id: u.id, name: u.name, email: u.email, role: u.role, isActive: u.isActive,
+          phone: u.phone, aadhaar: u.aadhaar, pan: u.pan,
+        }))}
         meId={me.id}
+        meRole={me.role}
       />
     </div>
   );
