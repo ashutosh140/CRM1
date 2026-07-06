@@ -1,14 +1,16 @@
 "use client";
 
-import { Suspense } from "react";
+import { Suspense, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useActionState } from "react";
+import { Eye, EyeOff } from "lucide-react";
 import { loginAction } from "@/app/actions/auth";
 import { AuthShell, GoogleButton } from "@/components/AuthShell";
 
 function LoginForm() {
   const [state, formAction, pending] = useActionState(loginAction, null);
+  const [showPw, setShowPw] = useState(false);
   const params = useSearchParams();
   const urlError = params.get("error");
 
@@ -28,14 +30,26 @@ function LoginForm() {
       <form action={formAction} className="space-y-4">
         <div>
           <label className="label" htmlFor="email">Email</label>
-          <input id="email" name="email" type="email" autoComplete="email" className="input" placeholder="you@company.com" required />
+          <input id="email" name="email" type="email" autoComplete="email" className="input" placeholder="Email" required />
         </div>
         <div>
           <div className="mb-1 flex items-center justify-between">
             <label className="label mb-0" htmlFor="password">Password</label>
             <Link href="/forgot-password" className="text-xs font-medium text-brand-600 hover:underline">Forgot password?</Link>
           </div>
-          <input id="password" name="password" type="password" autoComplete="current-password" className="input" placeholder="••••••••" required />
+          <div className="relative">
+            <input
+              id="password" name="password" type={showPw ? "text" : "password"}
+              autoComplete="current-password" className="input pr-10" placeholder="Password" required
+            />
+            <button
+              type="button" onClick={() => setShowPw((v) => !v)}
+              className="absolute inset-y-0 right-0 flex items-center px-3 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+              aria-label={showPw ? "Hide password" : "Show password"} tabIndex={-1}
+            >
+              {showPw ? <EyeOff size={16} /> : <Eye size={16} />}
+            </button>
+          </div>
         </div>
 
         {(state?.error || urlError) && (
