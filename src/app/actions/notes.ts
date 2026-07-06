@@ -32,6 +32,13 @@ export async function deleteNoteAction(id: string) {
   revalidatePath("/notes");
 }
 
+export async function setNoteColorAction(id: string, color: string) {
+  const me = await getCurrentUser();
+  if (!me) return;
+  await prisma.note.updateMany({ where: { id, userId: me.id }, data: { color: color || null } });
+  revalidatePath("/notes");
+}
+
 export async function togglePinAction(id: string) {
   const me = await getCurrentUser();
   if (!me) return;

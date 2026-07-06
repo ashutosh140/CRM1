@@ -18,7 +18,7 @@ export default async function NotesPage() {
       <PageHeader title="Notes" subtitle="Your private notebook — jot down anything, only you can see it." />
       <NotesApp
         notes={notes.map((n) => ({
-          id: n.id, title: n.title, body: n.body, pinned: n.pinned,
+          id: n.id, title: n.title, body: n.body, pinned: n.pinned, color: n.color,
           updatedAt: n.updatedAt.toISOString(),
         }))}
       />
