@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Sparkles, X, Send, Bot } from "lucide-react";
+import { Sparkles, X, Send, Bot, Mic } from "lucide-react";
+import { toast } from "@/lib/toast";
 
 interface Msg { role: "user" | "ai"; text: string; }
 
@@ -17,9 +18,33 @@ export function AssistantWidget() {
   const [msgs, setMsgs] = useState<Msg[]>([]);
   const [text, setText] = useState("");
   const [loading, setLoading] = useState(false);
+  const [listening, setListening] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
+  const recRef = useRef<{ stop: () => void } | null>(null);
 
   useEffect(() => { bottomRef.current?.scrollIntoView({ behavior: "smooth" }); }, [msgs, loading]);
+
+  function toggleMic() {
+    if (listening) { recRef.current?.stop(); setListening(false); return; }
+    const SR = (window as unknown as { SpeechRecognition?: new () => never; webkitSpeechRecognition?: new () => never })
+      .SpeechRecognition || (window as unknown as { webkitSpeechRecognition?: new () => never }).webkitSpeechRecognition;
+    if (!SR) { toast("Voice input isn't supported in this browser. Try Chrome.", "error"); return; }
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const rec: any = new (SR as any)();
+    rec.lang = "en-IN";
+    rec.interimResults = true;
+    rec.continuous = false;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    rec.onresult = (e: any) => {
+      const t = Array.from(e.results).map((r: any) => r[0].transcript).join(""); // eslint-disable-line @typescript-eslint/no-explicit-any
+      setText(t);
+    };
+    rec.onend = () => setListening(false);
+    rec.onerror = () => setListening(false);
+    recRef.current = rec;
+    setListening(true);
+    rec.start();
+  }
 
   async function ask(q: string) {
     const question = q.trim();
@@ -96,10 +121,14 @@ export function AssistantWidget() {
           {/* input */}
           <div className="border-t border-slate-200 p-2 dark:border-slate-700">
             <div className="flex items-center gap-2">
+              <button onClick={toggleMic} title="Speak your question"
+                className={`btn-ghost px-2.5 ${listening ? "animate-pulse bg-rose-50 text-rose-600 dark:bg-rose-500/10" : ""}`}>
+                <Mic size={16} />
+              </button>
               <input
                 value={text} onChange={(e) => setText(e.target.value)}
                 onKeyDown={(e) => { if (e.key === "Enter") ask(text); }}
-                placeholder="Ask a question…" className="input" disabled={loading}
+                placeholder={listening ? "Listening…" : "Ask or speak a question…"} className="input" disabled={loading}
               />
               <button onClick={() => ask(text)} disabled={loading || !text.trim()} className="btn-primary px-3"><Send size={16} /></button>
             </div>

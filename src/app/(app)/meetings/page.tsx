@@ -1,20 +1,30 @@
 import { prisma } from "@/lib/prisma";
 import { PageHeader, Card, EmptyState } from "@/components/ui";
 import { MeetingForm } from "@/components/MeetingForm";
+import { VideoMeetings } from "@/components/VideoMeetings";
 import { formatDate } from "@/lib/utils";
 
 export default async function MeetingsPage() {
-  const meetings = await prisma.meeting.findMany({
-    orderBy: { createdAt: "desc" },
-    take: 30,
-  });
+  const [meetings, videoMeetings] = await Promise.all([
+    prisma.meeting.findMany({ orderBy: { createdAt: "desc" }, take: 30 }),
+    prisma.videoMeeting.findMany({ orderBy: [{ scheduledAt: "asc" }, { createdAt: "desc" }], take: 30 }),
+  ]);
 
   return (
     <div>
       <PageHeader
-        title="Meeting Summaries"
-        subtitle="Paste a transcript → AI generates summary, action items & auto-creates tasks."
+        title="Meetings"
+        subtitle="Start or schedule Google Meet video calls, and turn transcripts into AI summaries."
       />
+
+      <div className="mb-6">
+        <VideoMeetings meetings={videoMeetings.map((m) => ({
+          id: m.id, title: m.title, link: m.link,
+          scheduledAt: m.scheduledAt ? m.scheduledAt.toISOString() : null, attendees: m.attendees,
+        }))} />
+      </div>
+
+      <h2 className="mb-3 text-lg font-semibold text-slate-900 dark:text-white">AI Meeting Summaries</h2>
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         <MeetingForm />
         <div className="space-y-4">

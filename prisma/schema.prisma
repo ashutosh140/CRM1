@@ -501,6 +501,18 @@ model AiInsight {
   @@index([type])
 }
 
+model VideoMeeting {
+  id          String    @id @default(cuid())
+  title       String
+  link        String
+  scheduledAt DateTime?
+  attendees   String?
+  createdById String?
+  createdAt   DateTime  @default(now())
+
+  @@index([scheduledAt])
+}
+
 model Meeting {
   id          String   @id @default(cuid())
   title       String
