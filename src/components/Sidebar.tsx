@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
@@ -27,6 +28,24 @@ const RANK: Record<Role, number> = { SUPER_ADMIN: 5, ADMIN: 4, MANAGER: 3, SALES
 
 export function Sidebar({ role }: { role: Role }) {
   const pathname = usePathname();
+  const [unread, setUnread] = useState(0);
+
+  // poll unread chat count for the Communication badge
+  useEffect(() => {
+    let alive = true;
+    const load = async () => {
+      try {
+        const r = await fetch("/api/chat/unread", { cache: "no-store" });
+        if (!r.ok) return;
+        const d = await r.json();
+        if (alive) setUnread(d.count || 0);
+      } catch { /* ignore */ }
+    };
+    load();
+    const i = setInterval(load, 10000);
+    return () => { alive = false; clearInterval(i); };
+  }, [pathname]);
+
   return (
     <aside className="hidden w-64 shrink-0 flex-col border-r border-slate-200 bg-white md:flex">
       <div className="flex h-16 items-center gap-2 border-b border-slate-200 px-5">
@@ -54,7 +73,12 @@ export function Sidebar({ role }: { role: Role }) {
               )}
             >
               <Icon size={18} />
-              {item.label}
+              <span className="flex-1">{item.label}</span>
+              {item.href === "/communication" && unread > 0 && (
+                <span className="flex h-5 min-w-[20px] items-center justify-center rounded-full bg-rose-500 px-1.5 text-[11px] font-semibold text-white">
+                  {unread > 99 ? "99+" : unread}
+                </span>
+              )}
             </Link>
           );
         })}
